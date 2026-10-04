@@ -19,15 +19,17 @@ Flutter con arquitectura MVVM e integración con Firebase
 
 ## Estructura del proyecto
 
+```text
 lib/
-├── core/ Tema, constantes y utilidades compartidas
-├── models/ Clases de datos (Donacion, Usuario)
-├── services/ Única capa que habla con Firebase, Maps o APIs
-├── repositories/ Fuente única de verdad de cada tipo de dato
-├── viewmodels/ Lógica y estado de cada pantalla
-├── views/ Pantallas, agrupadas por módulo
-├── widgets/ Componentes reutilizables
-└── routes/ Nombres de las rutas de navegación
+├── core/           Tema, constantes y utilidades compartidas
+├── models/         Clases de datos (Donacion, Usuario)
+├── services/       Única capa que habla con Firebase, Maps o APIs
+├── repositories/   Fuente única de verdad de cada tipo de dato
+├── viewmodels/     Lógica y estado de cada pantalla
+├── views/          Pantallas, agrupadas por módulo
+├── widgets/        Componentes reutilizables
+└── routes/         Nombres de las rutas de navegación
+```
 
 
 Las dependencias van en una sola dirección: una vista conoce a su
