@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "1040694039607",
+    "project_id": "reparte-a3c07",
+    "storage_bucket": "reparte-a3c07.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040694039607:android:e6e9a9ec6ba8a00d339bb2",
+        "android_client_info": {
+          "package_name": "com.example.reparte"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1040694039607-9j02qf29d507loe3t95bv17tcqdht7iq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPMXyKWlhJQ49Zs7Kg5Y6txwSTpd45W9c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1040694039607-9j02qf29d507loe3t95bv17tcqdht7iq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040694039607:android:28084e809665118e339bb2",
+        "android_client_info": {
+          "package_name": "com.reparte.reparte"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1040694039607-9j02qf29d507loe3t95bv17tcqdht7iq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPMXyKWlhJQ49Zs7Kg5Y6txwSTpd45W9c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1040694039607-9j02qf29d507loe3t95bv17tcqdht7iq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
