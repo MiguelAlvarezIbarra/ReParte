@@ -1,9 +1,15 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'core/tema/tema_app.dart';
+import 'firebase_options.dart';
 import 'views/auth/login_view.dart';
 
-void main() {
-  // TODO(T04): inicializar Firebase antes de runApp.
+Future<void> main() async {
+  // Firebase debe estar listo antes de que cualquier servicio lo use.
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const ReParteApp());
 }
 
