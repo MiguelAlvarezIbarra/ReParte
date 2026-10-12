@@ -1,7 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'core/tema/tema_app.dart';
 import 'firebase_options.dart';
+import 'repositories/usuario_repository.dart';
+import 'services/auth_service.dart';
+import 'services/firestore_service.dart';
+import 'viewmodels/login_viewmodel.dart';
 import 'views/auth/login_view.dart';
 
 Future<void> main() async {
@@ -10,7 +15,23 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const ReParteApp());
+
+  // Una sola instancia de cada servicio, inyectada hacia arriba.
+  final usuarioRepository = UsuarioRepository(
+    auth: AuthService(),
+    firestore: FirestoreService(),
+  );
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => LoginViewModel(usuarioRepository),
+        ),
+      ],
+      child: const ReParteApp(),
+    ),
+  );
 }
 
 class ReParteApp extends StatelessWidget {
