@@ -67,6 +67,7 @@ void main() {
       'nombre': 'Laura',
       'correo': 'laura@restaurante.mx',
       'rol': 'donante',
+      'telefono': '',
     })).called(1);
   });
 
