@@ -124,4 +124,33 @@ void main() {
     expect(vm.usuario, isNull);
     expect(vm.estado, EstadoUI.inicial);
   });
+
+  group('restaurarSesion', () {
+    test('recupera al usuario con sesion abierta', () async {
+      when(repo.usuarioActual()).thenAnswer((_) async => laura);
+
+      await vm.restaurarSesion();
+
+      expect(vm.sesionVerificada, isTrue);
+      expect(vm.usuario, laura);
+    });
+
+    test('sin sesion queda sin usuario', () async {
+      when(repo.usuarioActual()).thenAnswer((_) async => null);
+
+      await vm.restaurarSesion();
+
+      expect(vm.sesionVerificada, isTrue);
+      expect(vm.usuario, isNull);
+    });
+
+    test('si falla la consulta, termina sin usuario', () async {
+      when(repo.usuarioActual()).thenThrow(Exception('sin red'));
+
+      await vm.restaurarSesion();
+
+      expect(vm.sesionVerificada, isTrue);
+      expect(vm.usuario, isNull);
+    });
+  });
 }
