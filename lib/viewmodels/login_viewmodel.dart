@@ -46,6 +46,14 @@ class LoginViewModel extends ChangeNotifier {
         ));
   }
 
+  /// Quita el error al cambiar de pantalla para no arrastrarlo.
+  void limpiarError() {
+    if (mensajeError == null) return;
+    mensajeError = null;
+    estado = EstadoUI.inicial;
+    notifyListeners();
+  }
+
   Future<void> cerrarSesion() async {
     await _repo.cerrarSesion();
     usuario = null;
