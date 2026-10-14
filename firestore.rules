@@ -1,0 +1,53 @@
+rules_version = '2';
+
+// Reglas de seguridad de ReParte (tarea T05).
+// Regla general: solo un usuario autenticado puede leer y escribir.
+// Ademas, cada quien solo modifica lo que le pertenece.
+//
+// Colecciones (ver lib/core/constantes/colecciones.dart):
+//   usuarios/{uid}         nombre, correo, rol, telefono
+//   donaciones/{id}        donanteId, descripcion, cantidadKg, caducidad,
+//                          puntoEntregaId, creadaEn, estado, asociacionId
+//   puntos_entrega/{id}    donanteId, nombre, direccion, latitud, longitud,
+//                          horario
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function esDueno(uid) {
+      return autenticado() && request.auth.uid == uid;
+    }
+
+    // Cada usuario crea y edita solo su propio perfil.
+    match /usuarios/{uid} {
+      allow read: if autenticado();
+      allow create, update: if esDueno(uid);
+      allow delete: if false;
+    }
+
+    // El donante publica a su nombre; cualquier usuario autenticado
+    // puede actualizarla para reservarla o marcarla como entregada.
+    // TODO(T20): restringir la actualizacion para evitar la doble reserva.
+    match /donaciones/{id} {
+      allow read: if autenticado();
+      allow create: if esDueno(request.resource.data.donanteId);
+      allow update: if autenticado()
+        && request.resource.data.donanteId == resource.data.donanteId;
+      allow delete: if esDueno(resource.data.donanteId);
+    }
+
+    match /puntos_entrega/{id} {
+      allow read: if autenticado();
+      allow create: if esDueno(request.resource.data.donanteId);
+      allow update, delete: if esDueno(resource.data.donanteId);
+    }
+
+    // Cualquier otra coleccion queda cerrada.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
