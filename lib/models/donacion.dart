@@ -29,8 +29,7 @@ class Donacion {
 
   bool get estaVigente => caducidad.isAfter(DateTime.now());
 
-  bool get estaDisponible =>
-      estado == EstadoDonacion.disponible && estaVigente;
+  bool get estaDisponible => estado == EstadoDonacion.disponible && estaVigente;
 
   /// Copia con cambios, util para reservar o marcar como entregada.
   Donacion copyWith({EstadoDonacion? estado, String? asociacionId}) {

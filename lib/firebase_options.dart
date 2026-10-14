@@ -59,5 +59,4 @@ class DefaultFirebaseOptions {
     projectId: 'reparte-a3c07',
     storageBucket: 'reparte-a3c07.firebasestorage.app',
   );
-
 }
