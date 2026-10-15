@@ -28,7 +28,7 @@ void main() {
   testWidgets('muestra los campos del registro', (tester) async {
     await abrirRegistro(tester);
 
-    expect(campo('Nombre del establecimiento u organización'), findsOneWidget);
+    expect(campo('Nombre del establecimiento'), findsOneWidget);
     expect(campo('Correo'), findsOneWidget);
     expect(campo('Contraseña'), findsOneWidget);
   });
@@ -75,8 +75,7 @@ void main() {
         ));
     await abrirRegistro(tester);
 
-    await tester.enterText(
-        campo('Nombre del establecimiento u organización'), 'La Esquina');
+    await tester.enterText(campo('Nombre del establecimiento'), 'La Esquina');
     await tester.enterText(campo('Correo'), 'laura@restaurante.mx');
     await tester.enterText(campo('Contraseña'), '123456');
     await tester.tap(find.widgetWithText(FilledButton, 'Crear cuenta'));
@@ -87,6 +86,48 @@ void main() {
       correo: 'laura@restaurante.mx',
       contrasena: '123456',
       rol: anyNamed('rol'),
+    )).called(1);
+  });
+
+  testWidgets('por defecto el rol es Donante', (tester) async {
+    await abrirRegistro(tester);
+
+    final selector = tester.widget<SegmentedButton<RolUsuario>>(
+      find.byType(SegmentedButton<RolUsuario>),
+    );
+    expect(selector.selected, {RolUsuario.donante});
+  });
+
+  testWidgets('elegir Asociacion guarda ese rol en el perfil', (tester) async {
+    when(repo.registrar(
+      nombre: anyNamed('nombre'),
+      correo: anyNamed('correo'),
+      contrasena: anyNamed('contrasena'),
+      rol: anyNamed('rol'),
+    )).thenAnswer((_) async => const Usuario(
+          id: 'u2',
+          nombre: 'Comedor San José',
+          correo: 'ana@comedor.org',
+          rol: RolUsuario.asociacion,
+        ));
+    await abrirRegistro(tester);
+
+    await tester.tap(find.text('Asociación'));
+    await tester.pump();
+    expect(campo('Nombre de la organización'), findsOneWidget);
+
+    await tester.enterText(
+        campo('Nombre de la organización'), 'Comedor San José');
+    await tester.enterText(campo('Correo'), 'ana@comedor.org');
+    await tester.enterText(campo('Contraseña'), '123456');
+    await tester.tap(find.widgetWithText(FilledButton, 'Crear cuenta'));
+    await tester.pump();
+
+    verify(repo.registrar(
+      nombre: 'Comedor San José',
+      correo: 'ana@comedor.org',
+      contrasena: '123456',
+      rol: RolUsuario.asociacion,
     )).called(1);
   });
 }

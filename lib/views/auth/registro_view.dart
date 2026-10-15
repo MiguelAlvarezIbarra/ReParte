@@ -4,6 +4,7 @@ import '../../core/utilidades/validadores.dart';
 import '../../models/usuario.dart';
 import '../../viewmodels/login_viewmodel.dart';
 import '../../widgets/mensaje_error.dart';
+import '../../widgets/selector_rol.dart';
 
 /// Pantalla para crear una cuenta nueva.
 class RegistroView extends StatefulWidget {
@@ -19,6 +20,7 @@ class _RegistroViewState extends State<RegistroView> {
   final _correo = TextEditingController();
   final _contrasena = TextEditingController();
   bool _ocultarContrasena = true;
+  RolUsuario _rol = RolUsuario.donante;
 
   @override
   void dispose() {
@@ -35,8 +37,7 @@ class _RegistroViewState extends State<RegistroView> {
       nombre: _nombre.text,
       correo: _correo.text,
       contrasena: _contrasena.text,
-      // TODO(T09): usar el rol que elija el usuario.
-      rol: RolUsuario.donante,
+      rol: _rol,
     );
     if (!ok || !mounted) return;
     // TODO(T10): navegar a la pantalla de inicio segun el rol.
@@ -56,13 +57,21 @@ class _RegistroViewState extends State<RegistroView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                SelectorRol(
+                  rol: _rol,
+                  habilitado: !vm.cargando,
+                  alCambiar: (rol) => setState(() => _rol = rol),
+                ),
+                const SizedBox(height: 24),
                 TextFormField(
                   controller: _nombre,
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre del establecimiento u organización',
-                    prefixIcon: Icon(Icons.storefront_outlined),
+                  decoration: InputDecoration(
+                    labelText: _rol == RolUsuario.donante
+                        ? 'Nombre del establecimiento'
+                        : 'Nombre de la organización',
+                    prefixIcon: const Icon(Icons.badge_outlined),
                   ),
                   validator: (v) => Validadores.requerido(v, 'nombre'),
                 ),
