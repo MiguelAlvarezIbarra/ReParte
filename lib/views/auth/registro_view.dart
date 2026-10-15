@@ -40,7 +40,7 @@ class _RegistroViewState extends State<RegistroView> {
       rol: _rol,
     );
     if (!ok || !mounted) return;
-    // TODO(T10): navegar a la pantalla de inicio segun el rol.
+    // Al cerrar el registro, PuertaAcceso ya muestra la pantalla del rol.
     Navigator.of(context).pop();
   }
 

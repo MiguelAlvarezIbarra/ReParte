@@ -4,6 +4,7 @@ import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:reparte/core/tema/tema_app.dart';
 import 'package:reparte/models/usuario.dart';
+import 'package:reparte/routes/rutas.dart';
 import 'package:reparte/services/auth_service.dart';
 import 'package:reparte/viewmodels/login_viewmodel.dart';
 import 'package:reparte/views/auth/login_view.dart';
@@ -20,7 +21,11 @@ void main() {
     return tester.pumpWidget(
       ChangeNotifierProvider(
         create: (_) => LoginViewModel(repo),
-        child: MaterialApp(theme: TemaApp.claro, home: const LoginView()),
+        child: MaterialApp(
+          theme: TemaApp.claro,
+          home: const LoginView(),
+          routes: {Rutas.registro: (_) => const RegistroView()},
+        ),
       ),
     );
   }

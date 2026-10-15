@@ -4,7 +4,7 @@ import '../../core/utilidades/validadores.dart';
 import '../../viewmodels/login_viewmodel.dart';
 import '../../widgets/encabezado_reparte.dart';
 import '../../widgets/mensaje_error.dart';
-import 'registro_view.dart';
+import '../../routes/rutas.dart';
 
 /// Pantalla de inicio de sesion.
 /// Solo muestra lo que le indica el LoginViewModel.
@@ -31,19 +31,13 @@ class _LoginViewState extends State<LoginView> {
   Future<void> _entrar() async {
     if (!_formulario.currentState!.validate()) return;
     final vm = context.read<LoginViewModel>();
-    final ok = await vm.iniciarSesion(_correo.text, _contrasena.text);
-    if (!ok || !mounted) return;
-    // TODO(T10): navegar a la pantalla de inicio segun el rol.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Bienvenido, ${vm.usuario!.nombre}')),
-    );
+    // Si entra, PuertaAcceso cambia sola a la pantalla de su rol.
+    await vm.iniciarSesion(_correo.text, _contrasena.text);
   }
 
   Future<void> _irARegistro() async {
     final vm = context.read<LoginViewModel>()..limpiarError();
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const RegistroView()),
-    );
+    await Navigator.of(context).pushNamed(Rutas.registro);
     vm.limpiarError();
   }
 

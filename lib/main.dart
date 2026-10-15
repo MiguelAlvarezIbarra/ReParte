@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'core/tema/tema_app.dart';
 import 'firebase_options.dart';
 import 'repositories/usuario_repository.dart';
+import 'routes/rutas.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
 import 'viewmodels/login_viewmodel.dart';
-import 'views/auth/login_view.dart';
+import 'views/auth/registro_view.dart';
+import 'views/inicio/puerta_acceso.dart';
 
 Future<void> main() async {
   // Firebase debe estar listo antes de que cualquier servicio lo use.
@@ -43,7 +45,10 @@ class ReParteApp extends StatelessWidget {
       title: 'ReParte',
       debugShowCheckedModeBanner: false,
       theme: TemaApp.claro,
-      home: const LoginView(),
+      home: const PuertaAcceso(),
+      routes: {
+        Rutas.registro: (_) => const RegistroView(),
+      },
     );
   }
 }

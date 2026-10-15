@@ -17,6 +17,20 @@ class LoginViewModel extends ChangeNotifier {
 
   bool get cargando => estado == EstadoUI.cargando;
 
+  /// Falso hasta saber si habia una sesion abierta al arrancar la app.
+  bool sesionVerificada = false;
+
+  /// Recupera la sesion guardada por Firebase para no pedir login otra vez.
+  Future<void> restaurarSesion() async {
+    try {
+      usuario = await _repo.usuarioActual();
+    } catch (_) {
+      usuario = null;
+    }
+    sesionVerificada = true;
+    notifyListeners();
+  }
+
   /// Devuelve true si la sesion se inicio correctamente.
   Future<bool> iniciarSesion(String correo, String contrasena) async {
     correo = correo.trim();
