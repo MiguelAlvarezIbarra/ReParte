@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:reparte/models/donacion.dart';
+import 'package:reparte/models/punto_entrega.dart';
+import 'package:reparte/models/usuario.dart';
 import 'package:reparte/repositories/donacion_repository.dart';
 
 /// Repositorio de mentira para pruebas: las donaciones se "publican" a mano
@@ -7,12 +9,24 @@ import 'package:reparte/repositories/donacion_repository.dart';
 class DonacionRepositoryFalso extends DonacionRepository {
   final controlador = StreamController<List<Donacion>>();
 
+  /// Punto de entrega que devuelve [obtenerPuntoEntrega].
+  PuntoEntrega? punto;
+
+  /// Si es true, [obtenerPuntoEntrega] falla como si no hubiera conexion.
+  bool puntoFalla = false;
+
   void emitir(List<Donacion> donaciones) => controlador.add(donaciones);
 
   void fallar() => controlador.addError(Exception('sin conexion'));
 
   @override
   Stream<List<Donacion>> observarDisponibles() => controlador.stream;
+
+  @override
+  Future<PuntoEntrega?> obtenerPuntoEntrega(String id) async {
+    if (puntoFalla) throw Exception('sin conexion');
+    return punto;
+  }
 }
 
 /// Donacion de prueba que caduca dentro de [dias] dias.
@@ -34,3 +48,21 @@ Donacion donacionDePrueba(
     estado: estado,
   );
 }
+
+const donanteDePrueba = Usuario(
+  id: 'd1',
+  nombre: 'La Espiga',
+  correo: 'espiga@restaurante.mx',
+  rol: RolUsuario.donante,
+  telefono: '555 123 4567',
+);
+
+const puntoDePrueba = PuntoEntrega(
+  id: 'p1',
+  donanteId: 'd1',
+  nombre: 'Panaderia Central',
+  direccion: 'Calle Hidalgo 12',
+  latitud: 19.4,
+  longitud: -99.1,
+  horario: '18:00 a 20:30',
+);

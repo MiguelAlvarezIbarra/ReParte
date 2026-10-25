@@ -1,3 +1,5 @@
+import '../../models/donacion.dart';
+
 /// Textos con formato para mostrar en pantalla.
 class Formato {
   /// 05/11/2026
@@ -8,5 +10,19 @@ class Formato {
   static String kilos(double kg) {
     final texto = kg == kg.roundToDouble() ? kg.toInt().toString() : kg.toString();
     return '$texto kg';
+  }
+
+  /// Nombre del estado de una donacion, listo para mostrar.
+  static String estado(EstadoDonacion estado) {
+    switch (estado) {
+      case EstadoDonacion.disponible:
+        return 'Disponible';
+      case EstadoDonacion.reservada:
+        return 'Reservada';
+      case EstadoDonacion.entregada:
+        return 'Entregada';
+      case EstadoDonacion.cancelada:
+        return 'Cancelada';
+    }
   }
 }

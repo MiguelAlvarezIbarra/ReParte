@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:reparte/core/tema/tema_app.dart';
 import 'package:reparte/repositories/donacion_repository.dart';
+import 'package:reparte/repositories/usuario_repository.dart';
 import 'package:reparte/views/donaciones/lista_donaciones.dart';
 
 import '../fakes/donacion_repository_falso.dart';
+import '../viewmodels/login_viewmodel_test.mocks.dart';
 
 void main() {
   late DonacionRepositoryFalso repo;
@@ -13,9 +16,15 @@ void main() {
   setUp(() => repo = DonacionRepositoryFalso());
 
   Future<void> abrirLista(WidgetTester tester) {
+    final usuarios = MockUsuarioRepository();
+    when(usuarios.obtenerPerfil('d1')).thenAnswer((_) async => donanteDePrueba);
+    repo.punto = puntoDePrueba;
     return tester.pumpWidget(
-      Provider<DonacionRepository>.value(
-        value: repo,
+      MultiProvider(
+        providers: [
+          Provider<DonacionRepository>.value(value: repo),
+          Provider<UsuarioRepository>.value(value: usuarios),
+        ],
         child: MaterialApp(
           theme: TemaApp.claro,
           home: const Scaffold(body: ListaDonaciones()),
@@ -71,6 +80,23 @@ void main() {
     await tester.pump();
 
     expect(find.text('Tortillas'), findsOneWidget);
+  });
+
+  testWidgets('al tocar una donacion abre su detalle', (tester) async {
+    await abrirLista(tester);
+    repo.emitir([
+      donacionDePrueba('a', descripcion: 'Pan'),
+      donacionDePrueba('b', descripcion: 'Verduras', dias: 4),
+    ]);
+    await tester.pump();
+
+    await tester.tap(find.text('Verduras'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detalle de la donación'), findsOneWidget);
+    expect(find.text('Verduras'), findsOneWidget);
+    expect(find.text('La Espiga'), findsOneWidget);
+    expect(find.text('Panaderia Central'), findsOneWidget);
   });
 
   testWidgets('sin donaciones muestra el mensaje vacio', (tester) async {

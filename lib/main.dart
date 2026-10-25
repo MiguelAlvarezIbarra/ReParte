@@ -31,6 +31,7 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => LoginViewModel(usuarioRepository),
         ),
+        Provider<UsuarioRepository>.value(value: usuarioRepository),
         Provider<DonacionRepository>(create: (_) => DonacionRepository()),
       ],
       child: const ReParteApp(),
