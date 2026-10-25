@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'lista_donaciones.dart';
 
 /// Pantalla con la lista de donaciones disponibles.
-/// Solo muestra lo que le indica el DonacionesViewModel (tarea T16).
+/// Solo muestra lo que le indica el DonacionesViewModel (via ListaDonaciones).
 class DonacionesView extends StatelessWidget {
   const DonacionesView({super.key});
 
@@ -9,7 +10,7 @@ class DonacionesView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Donaciones disponibles')),
-      body: const Center(child: Text('Pendiente: tarea T16')),
+      body: const ListaDonaciones(),
     );
   }
 }

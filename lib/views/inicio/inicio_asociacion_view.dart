@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/usuario.dart';
 import '../../widgets/boton_cerrar_sesion.dart';
-import '../../widgets/estado_vacio.dart';
+import '../donaciones/lista_donaciones.dart';
 
 /// Pantalla principal de la asociacion: donaciones disponibles cerca.
 class InicioAsociacionView extends StatelessWidget {
@@ -26,15 +26,7 @@ class InicioAsociacionView extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          // TODO(T16): mostrar la lista de donaciones disponibles.
-          const Expanded(
-            child: EstadoVacio(
-              icono: Icons.volunteer_activism_outlined,
-              titulo: 'No hay donaciones disponibles',
-              mensaje: 'Aquí verás la comida que publiquen los '
-                  'restaurantes y supermercados cercanos.',
-            ),
-          ),
+          const Expanded(child: ListaDonaciones()),
         ],
       ),
     );

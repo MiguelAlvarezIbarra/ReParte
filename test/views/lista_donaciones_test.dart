@@ -1,0 +1,93 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:reparte/core/tema/tema_app.dart';
+import 'package:reparte/repositories/donacion_repository.dart';
+import 'package:reparte/views/donaciones/lista_donaciones.dart';
+
+import '../fakes/donacion_repository_falso.dart';
+
+void main() {
+  late DonacionRepositoryFalso repo;
+
+  setUp(() => repo = DonacionRepositoryFalso());
+
+  Future<void> abrirLista(WidgetTester tester) {
+    return tester.pumpWidget(
+      Provider<DonacionRepository>.value(
+        value: repo,
+        child: MaterialApp(
+          theme: TemaApp.claro,
+          home: const Scaffold(body: ListaDonaciones()),
+        ),
+      ),
+    );
+  }
+
+  testWidgets('mientras carga muestra un indicador', (tester) async {
+    await abrirLista(tester);
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
+  testWidgets('muestra las donaciones con cantidad y fecha de caducidad',
+      (tester) async {
+    await abrirLista(tester);
+
+    repo.emitir([donacionDePrueba('a', descripcion: 'Pan', cantidadKg: 2.5)]);
+    await tester.pump();
+
+    expect(find.text('Pan'), findsOneWidget);
+    expect(find.text('2.5 kg'), findsOneWidget);
+    expect(find.textContaining('Caduca el'), findsOneWidget);
+  });
+
+  testWidgets('las muestra ordenadas: primero la que caduca antes',
+      (tester) async {
+    await abrirLista(tester);
+
+    repo.emitir([
+      donacionDePrueba('b', descripcion: 'Verduras', dias: 4),
+      donacionDePrueba('a', descripcion: 'Pan', dias: 1),
+    ]);
+    await tester.pump();
+
+    final pan = tester.getTopLeft(find.text('Pan')).dy;
+    final verduras = tester.getTopLeft(find.text('Verduras')).dy;
+    expect(pan, lessThan(verduras));
+  });
+
+  testWidgets('se actualiza solo cuando llega una donacion nueva',
+      (tester) async {
+    await abrirLista(tester);
+    repo.emitir([donacionDePrueba('a', descripcion: 'Pan')]);
+    await tester.pump();
+    expect(find.text('Tortillas'), findsNothing);
+
+    repo.emitir([
+      donacionDePrueba('a', descripcion: 'Pan'),
+      donacionDePrueba('b', descripcion: 'Tortillas'),
+    ]);
+    await tester.pump();
+
+    expect(find.text('Tortillas'), findsOneWidget);
+  });
+
+  testWidgets('sin donaciones muestra el mensaje vacio', (tester) async {
+    await abrirLista(tester);
+
+    repo.emitir([]);
+    await tester.pump();
+
+    expect(find.text('No hay donaciones disponibles'), findsOneWidget);
+  });
+
+  testWidgets('si falla la carga muestra el mensaje de error', (tester) async {
+    await abrirLista(tester);
+
+    repo.fallar();
+    await tester.pump();
+
+    expect(find.text('No se pudieron cargar las donaciones'), findsOneWidget);
+  });
+}
