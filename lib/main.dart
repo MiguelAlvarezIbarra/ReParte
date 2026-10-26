@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/tema/tema_app.dart';
 import 'firebase_options.dart';
+import 'repositories/donacion_repository.dart';
 import 'repositories/usuario_repository.dart';
 import 'routes/rutas.dart';
 import 'services/auth_service.dart';
@@ -30,6 +31,7 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => LoginViewModel(usuarioRepository),
         ),
+        Provider<DonacionRepository>(create: (_) => DonacionRepository()),
       ],
       child: const ReParteApp(),
     ),

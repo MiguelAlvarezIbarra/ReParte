@@ -1,0 +1,12 @@
+/// Textos con formato para mostrar en pantalla.
+class Formato {
+  /// 05/11/2026
+  static String fecha(DateTime f) =>
+      '${f.day.toString().padLeft(2, '0')}/${f.month.toString().padLeft(2, '0')}/${f.year}';
+
+  /// "3 kg" si es entero, "2.5 kg" si trae decimales.
+  static String kilos(double kg) {
+    final texto = kg == kg.roundToDouble() ? kg.toInt().toString() : kg.toString();
+    return '$texto kg';
+  }
+}
