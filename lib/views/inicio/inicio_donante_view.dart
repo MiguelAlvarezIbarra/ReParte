@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/usuario.dart';
 import '../../widgets/boton_cerrar_sesion.dart';
 import '../../widgets/estado_vacio.dart';
+import '../donaciones/publicar_donacion_view.dart';
 
 /// Pantalla principal del donante: sus donaciones y el boton para publicar.
 class InicioDonanteView extends StatelessWidget {
@@ -38,10 +39,8 @@ class InicioDonanteView extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        // TODO(T11): abrir el formulario de publicar donacion.
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Disponible en el Sprint 2')),
-        ),
+        // TODO(T12): guardar en Firestore los datos que devuelve el formulario.
+        onPressed: () => PublicarDonacionView.abrir(context),
         icon: const Icon(Icons.add),
         label: const Text('Publicar donación'),
       ),
