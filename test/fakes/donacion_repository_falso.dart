@@ -18,7 +18,28 @@ class DonacionRepositoryFalso extends DonacionRepository {
   /// Si es true, [obtenerPuntoEntrega] falla como si no hubiera conexion.
   bool puntoFalla = false;
 
+  /// Lo que se publico con [crear] y [crearPuntoEntrega].
+  final creadas = <Donacion>[];
+  final puntosCreados = <PuntoEntrega>[];
+
+  /// Si es true, publicar falla como si no hubiera conexion.
+  bool crearFalla = false;
+
   void emitir(List<Donacion> donaciones) => controlador.add(donaciones);
+
+  @override
+  Future<String> crearPuntoEntrega(PuntoEntrega punto) async {
+    if (crearFalla) throw Exception('sin conexion');
+    puntosCreados.add(punto);
+    return 'p${puntosCreados.length}';
+  }
+
+  @override
+  Future<String> crear(Donacion donacion) async {
+    if (crearFalla) throw Exception('sin conexion');
+    creadas.add(donacion);
+    return 'd${creadas.length}';
+  }
 
   void fallar() => controlador.addError(Exception('sin conexion'));
 

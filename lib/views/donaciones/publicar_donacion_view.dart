@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/utilidades/validadores.dart';
+import '../../repositories/donacion_repository.dart';
 import '../../viewmodels/publicar_donacion_viewmodel.dart';
 import '../../widgets/mensaje_error.dart';
 
 /// Formulario con el que un donante publica una donacion.
-/// Al terminar devuelve los [DatosDonacion] capturados (o null si cancela).
+/// Guarda la donacion y se cierra devolviendo true; si cancela, devuelve false.
 class PublicarDonacionView extends StatefulWidget {
   const PublicarDonacionView({super.key});
 
-  /// Abre el formulario con su propio ViewModel.
-  static Future<DatosDonacion?> abrir(BuildContext context) {
-    return Navigator.of(context).push<DatosDonacion>(
+  /// Abre el formulario con su propio ViewModel, a nombre de [donanteId].
+  static Future<bool> abrir(
+    BuildContext context, {
+    required String donanteId,
+  }) async {
+    final repo = context.read<DonacionRepository>();
+    final publicada = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider(
-          create: (_) => PublicarDonacionViewModel(),
+          create: (_) => PublicarDonacionViewModel(repo, donanteId: donanteId),
           child: const PublicarDonacionView(),
         ),
       ),
     );
+    return publicada ?? false;
   }
 
   @override
@@ -63,17 +69,16 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
     });
   }
 
-  void _publicar() {
+  Future<void> _publicar() async {
     if (!_formulario.currentState!.validate()) return;
-    final vm = context.read<PublicarDonacionViewModel>();
-    final ok = vm.preparar(
-      descripcion: _descripcion.text,
-      cantidad: _cantidad.text,
-      fechaCaducidad: _fechaCaducidad,
-      puntoNombre: _puntoNombre.text,
-      puntoDireccion: _puntoDireccion.text,
-    );
-    if (ok) Navigator.of(context).pop(vm.borrador);
+    final ok = await context.read<PublicarDonacionViewModel>().publicar(
+          descripcion: _descripcion.text,
+          cantidad: _cantidad.text,
+          fechaCaducidad: _fechaCaducidad,
+          puntoNombre: _puntoNombre.text,
+          puntoDireccion: _puntoDireccion.text,
+        );
+    if (ok && mounted) Navigator.of(context).pop(true);
   }
 
   @override
@@ -161,8 +166,13 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
                 ],
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _publicar,
-                  child: const Text('Publicar donación'),
+                  onPressed: vm.publicando ? null : _publicar,
+                  child: vm.publicando
+                      ? const SizedBox.square(
+                          dimension: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Publicar donación'),
                 ),
               ],
             ),
