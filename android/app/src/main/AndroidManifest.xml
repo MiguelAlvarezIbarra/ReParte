@@ -7,10 +7,6 @@
         android:label="reparte"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        <!-- Google Maps API Key: Coloca aqui tu clave obtenida de Google Cloud Console -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="TU_API_KEY_DE_GOOGLE_MAPS_AQUI" />
 
         <activity
             android:name=".MainActivity"

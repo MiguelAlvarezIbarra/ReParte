@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../services/ubicacion_service.dart';
 
 /// Resultado devuelto tras seleccionar una ubicación en el mapa.
@@ -15,7 +16,7 @@ class ResultadoUbicacion {
   final String? direccion;
 }
 
-/// Pantalla con mapa interactivo para seleccionar el punto de entrega.
+/// Pantalla con mapa interactivo de OpenStreetMap para seleccionar el punto de entrega.
 class SeleccionarUbicacionView extends StatefulWidget {
   const SeleccionarUbicacionView({
     super.key,
@@ -60,7 +61,7 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
   late double _longitud;
   String? _direccion;
   bool _obteniendoDireccion = false;
-  GoogleMapController? _mapController;
+  late final MapController _mapController;
   late final UbicacionService _ubicacionService;
 
   @override
@@ -68,6 +69,7 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
     super.initState();
     _latitud = widget.latitudInicial ?? _latPorDefecto;
     _longitud = widget.longitudInicial ?? _lngPorDefecto;
+    _mapController = MapController();
     _ubicacionService =
         widget.ubicacionService ?? const GeolocatorUbicacionService();
     _obtenerDireccion(_latitud, _longitud);
@@ -108,9 +110,7 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
       _latitud = pos.latitud;
       _longitud = pos.longitud;
     });
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLng(LatLng(pos.latitud, pos.longitud)),
-    );
+    _mapController.move(LatLng(pos.latitud, pos.longitud), 16);
     _obtenerDireccion(pos.latitud, pos.longitud);
   }
 
@@ -132,25 +132,35 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            key: const Key('mapa_google_view'),
-            initialCameraPosition: CameraPosition(
-              target: pos,
-              zoom: 16,
+          FlutterMap(
+            key: const Key('mapa_osm_view'),
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: pos,
+              initialZoom: 15,
+              onTap: (tapPosition, point) => _onTapMapa(point),
             ),
-            markers: {
-              Marker(
-                markerId: const MarkerId('punto_entrega_marker'),
-                position: pos,
-                draggable: true,
-                onDragEnd: (nuevaPos) => _onTapMapa(nuevaPos),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.reparte.reparte',
               ),
-            },
-            onTap: _onTapMapa,
-            onMapCreated: (c) => _mapController = c,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: pos,
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.topCenter,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.redAccent,
+                      size: 44,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           Positioned(
             right: 16,
@@ -187,7 +197,10 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
                                 ? 'Obteniendo dirección...'
                                 : (_direccion ??
                                     '${_latitud.toStringAsFixed(5)}, ${_longitud.toStringAsFixed(5)}'),
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                             maxLines: 2,
