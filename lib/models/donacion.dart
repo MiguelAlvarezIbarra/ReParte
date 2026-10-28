@@ -31,6 +31,29 @@ class Donacion {
 
   bool get estaDisponible => estado == EstadoDonacion.disponible && estaVigente;
 
+  /// Valida que la donacion tenga datos obligatorios y validos antes de guardarse.
+  /// Lanza [ArgumentError] si algun campo esta vacio, la cantidad es cero o menor,
+  /// o la fecha de caducidad ya paso.
+  void validar({DateTime? ahora}) {
+    if (donanteId.trim().isEmpty) {
+      throw ArgumentError('El donante es obligatorio');
+    }
+    if (descripcion.trim().isEmpty) {
+      throw ArgumentError('La descripción es obligatoria');
+    }
+    if (cantidadKg.isNaN || !cantidadKg.isFinite || cantidadKg <= 0) {
+      throw ArgumentError('La cantidad debe ser mayor a 0');
+    }
+    final hoy = ahora ?? DateTime.now();
+    final inicioDeHoy = DateTime(hoy.year, hoy.month, hoy.day);
+    if (caducidad.isBefore(inicioDeHoy)) {
+      throw ArgumentError('La fecha de caducidad ya pasó');
+    }
+    if (puntoEntregaId.trim().isEmpty) {
+      throw ArgumentError('El punto de entrega es obligatorio');
+    }
+  }
+
   /// Copia con cambios, util para reservar o marcar como entregada.
   Donacion copyWith({EstadoDonacion? estado, String? asociacionId}) {
     return Donacion(

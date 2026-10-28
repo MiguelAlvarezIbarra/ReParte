@@ -81,6 +81,26 @@ void main() {
     expect(resultado, isNull);
   });
 
+  testWidgets('valida campos con solo espacios en blanco (criterio T14)',
+      (tester) async {
+    await abrirFormulario(tester);
+
+    await tester.enterText(campo('Descripción'), '   ');
+    await tester.enterText(campo('Cantidad (kg)'), '   ');
+    await tester.enterText(campo('Nombre del punto de entrega'), '   ');
+    await tester.enterText(campo('Dirección'), '   ');
+
+    await tester.tap(botonPublicar());
+    await tester.pump();
+
+    expect(find.text('Describe qué vas a donar'), findsOneWidget);
+    expect(find.text('Escribe la cantidad'), findsOneWidget);
+    expect(find.text('Escribe el nombre del punto de entrega'), findsOneWidget);
+    expect(find.text('Escribe la dirección de entrega'), findsOneWidget);
+    expect(resultado, isNull);
+    expect(repo.creadas, isEmpty);
+  });
+
   testWidgets('rechaza una cantidad que no es numero', (tester) async {
     await abrirFormulario(tester);
 
@@ -89,6 +109,28 @@ void main() {
     await tester.pump();
 
     expect(find.text('Escribe un número válido'), findsOneWidget);
+    expect(resultado, isNull);
+  });
+
+  testWidgets('rechaza una cantidad en cero o negativa (criterio T14)',
+      (tester) async {
+    await abrirFormulario(tester);
+
+    await tester.enterText(campo('Cantidad (kg)'), '0');
+    await tester.tap(botonPublicar());
+    await tester.pump();
+
+    expect(find.text('La cantidad debe ser mayor a 0'), findsOneWidget);
+    expect(resultado, isNull);
+    expect(repo.creadas, isEmpty);
+
+    await tester.enterText(campo('Cantidad (kg)'), '-5');
+    await tester.tap(botonPublicar());
+    await tester.pump();
+
+    expect(find.text('La cantidad debe ser mayor a 0'), findsOneWidget);
+    expect(resultado, isNull);
+    expect(repo.creadas, isEmpty);
   });
 
   Future<void> llenarFormulario(WidgetTester tester) async {

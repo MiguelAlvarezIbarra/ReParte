@@ -21,6 +21,20 @@ class PuntoEntrega {
     this.horario = '',
   });
 
+  /// Valida que el punto de entrega tenga datos obligatorios no vacios.
+  /// Lanza [ArgumentError] si algun campo es invalido.
+  void validar() {
+    if (donanteId.trim().isEmpty) {
+      throw ArgumentError('El donante es obligatorio');
+    }
+    if (nombre.trim().isEmpty) {
+      throw ArgumentError('El nombre del punto de entrega es obligatorio');
+    }
+    if (direccion.trim().isEmpty) {
+      throw ArgumentError('La dirección de entrega es obligatoria');
+    }
+  }
+
   factory PuntoEntrega.fromMap(String id, Map<String, dynamic> map) {
     return PuntoEntrega(
       id: id,

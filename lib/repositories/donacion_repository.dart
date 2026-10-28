@@ -33,7 +33,9 @@ class DonacionRepository {
   }
 
   /// Guarda un punto de entrega nuevo y devuelve su id.
+  /// Valida que no tenga datos vacíos antes de guardarlo.
   Future<String> crearPuntoEntrega(PuntoEntrega punto) {
+    punto.validar();
     return _firestore.agregarDocumento(
       Colecciones.puntosEntrega,
       punto.toMap(),
@@ -41,7 +43,10 @@ class DonacionRepository {
   }
 
   /// Publica una donacion y devuelve su id.
+  /// Valida los datos antes de guardarla: no se guardan donaciones con campos
+  /// vacíos, cantidad en cero o fecha de caducidad pasada.
   Future<String> crear(Donacion donacion) {
+    donacion.validar();
     return _firestore.agregarDocumento(
       Colecciones.donaciones,
       donacion.toMap(),

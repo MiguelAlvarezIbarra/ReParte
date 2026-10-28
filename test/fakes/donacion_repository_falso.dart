@@ -29,6 +29,7 @@ class DonacionRepositoryFalso extends DonacionRepository {
 
   @override
   Future<String> crearPuntoEntrega(PuntoEntrega punto) async {
+    punto.validar();
     if (crearFalla) throw Exception('sin conexion');
     puntosCreados.add(punto);
     return 'p${puntosCreados.length}';
@@ -36,6 +37,7 @@ class DonacionRepositoryFalso extends DonacionRepository {
 
   @override
   Future<String> crear(Donacion donacion) async {
+    donacion.validar();
     if (crearFalla) throw Exception('sin conexion');
     creadas.add(donacion);
     return 'd${creadas.length}';
