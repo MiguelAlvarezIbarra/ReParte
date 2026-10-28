@@ -203,15 +203,15 @@ void main() {
       expect(copia.horario, '18:00 a 20:30');
     });
 
-    group('validar (T14)', () {
-      test('acepta punto valido', () {
+    group('validar (T14 y T15)', () {
+      test('acepta punto valido con coordenadas', () {
         const punto = PuntoEntrega(
           id: 'p1',
           donanteId: 'u1',
           nombre: 'La Esquina',
           direccion: 'Calle 10',
-          latitud: 0,
-          longitud: 0,
+          latitud: 21.1561,
+          longitud: -100.9346,
         );
         expect(() => punto.validar(), returnsNormally);
       });
@@ -246,6 +246,38 @@ void main() {
           longitud: 0,
         );
         expect(() => sinDireccion.validar(), throwsA(isA<ArgumentError>()));
+      });
+
+      test('rechaza coordenadas invalidas o fuera de rango (T15)', () {
+        const latFuera = PuntoEntrega(
+          id: 'p1',
+          donanteId: 'u1',
+          nombre: 'Punto',
+          direccion: 'Calle 1',
+          latitud: 95.0,
+          longitud: 0,
+        );
+        expect(() => latFuera.validar(), throwsA(isA<ArgumentError>()));
+
+        const lngFuera = PuntoEntrega(
+          id: 'p1',
+          donanteId: 'u1',
+          nombre: 'Punto',
+          direccion: 'Calle 1',
+          latitud: 0,
+          longitud: 200.0,
+        );
+        expect(() => lngFuera.validar(), throwsA(isA<ArgumentError>()));
+
+        const latNaN = PuntoEntrega(
+          id: 'p1',
+          donanteId: 'u1',
+          nombre: 'Punto',
+          direccion: 'Calle 1',
+          latitud: double.nan,
+          longitud: 0,
+        );
+        expect(() => latNaN.validar(), throwsA(isA<ArgumentError>()));
       });
     });
   });

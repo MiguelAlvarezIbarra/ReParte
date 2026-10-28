@@ -6,13 +6,16 @@ import 'package:reparte/repositories/donacion_repository.dart';
 import 'package:reparte/views/donaciones/publicar_donacion_view.dart';
 
 import '../fakes/donacion_repository_falso.dart';
+import '../fakes/ubicacion_service_falso.dart';
 
 void main() {
   late DonacionRepositoryFalso repo;
+  late UbicacionServiceFalso ubicacionService;
   bool? resultado;
 
   setUp(() {
     repo = DonacionRepositoryFalso();
+    ubicacionService = UbicacionServiceFalso();
     resultado = null;
   });
 
@@ -36,6 +39,7 @@ void main() {
                     resultado = await PublicarDonacionView.abrir(
                       context,
                       donanteId: 'd1',
+                      ubicacionService: ubicacionService,
                     );
                   },
                   child: const Text('abrir'),
@@ -54,7 +58,8 @@ void main() {
   Finder botonPublicar() =>
       find.widgetWithText(FilledButton, 'Publicar donación');
 
-  testWidgets('muestra los campos del formulario', (tester) async {
+  testWidgets('muestra los campos del formulario y botones de ubicacion (T15)',
+      (tester) async {
     await abrirFormulario(tester);
 
     expect(campo('Descripción'), findsOneWidget);
@@ -62,7 +67,23 @@ void main() {
     expect(campo('Fecha de caducidad'), findsOneWidget);
     expect(campo('Nombre del punto de entrega'), findsOneWidget);
     expect(campo('Dirección'), findsOneWidget);
+    expect(find.byKey(const Key('boton_usar_mi_ubicacion')), findsOneWidget);
+    expect(find.byKey(const Key('boton_elegir_en_mapa')), findsOneWidget);
     expect(botonPublicar(), findsOneWidget);
+  });
+
+  testWidgets('el boton Mi ubicacion pide coordenadas y las muestra (T15)',
+      (tester) async {
+    await abrirFormulario(tester);
+
+    await tester.tap(find.byKey(const Key('boton_usar_mi_ubicacion')));
+    await tester.pumpAndSettle();
+
+    expect(ubicacionService.llamadasSolicitarPermiso, 1);
+    expect(ubicacionService.llamadasObtenerUbicacion, 1);
+    expect(find.textContaining('Coordenadas: 21.1561, -100.9346'), findsOneWidget);
+    // Llena la direccion si estaba vacia.
+    expect(find.text('Calle Hidalgo 12, Dolores Hidalgo'), findsOneWidget);
   });
 
   testWidgets('valida los campos vacios y no cierra el formulario',
@@ -145,10 +166,14 @@ void main() {
     await tester.enterText(campo('Dirección'), 'Calle Hidalgo 12');
   }
 
-  testWidgets('con datos validos publica la donacion y se cierra',
+  testWidgets('con datos validos publica la donacion y guarda coordenadas (T15)',
       (tester) async {
     await abrirFormulario(tester);
     await llenarFormulario(tester);
+
+    // Obtiene ubicacion actual
+    await tester.tap(find.byKey(const Key('boton_usar_mi_ubicacion')));
+    await tester.pumpAndSettle();
 
     await tester.tap(botonPublicar());
     await tester.pumpAndSettle();
@@ -163,6 +188,8 @@ void main() {
     expect(donacion.caducidad.isAfter(DateTime.now()), isTrue);
     expect(repo.puntosCreados.single.nombre, 'Panaderia La Espiga');
     expect(repo.puntosCreados.single.direccion, 'Calle Hidalgo 12');
+    expect(repo.puntosCreados.single.latitud, 21.1561);
+    expect(repo.puntosCreados.single.longitud, -100.9346);
   });
 
   testWidgets('si falla al guardar muestra el error y no se cierra',

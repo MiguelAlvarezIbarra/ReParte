@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/utilidades/validadores.dart';
 import '../../repositories/donacion_repository.dart';
+import '../../services/ubicacion_service.dart';
 import '../../viewmodels/publicar_donacion_viewmodel.dart';
 import '../../widgets/mensaje_error.dart';
+import '../mapa/seleccionar_ubicacion_view.dart';
 
 /// Formulario con el que un donante publica una donacion.
-/// Guarda la donacion y se cierra devolviendo true; si cancela, devuelve false.
+/// Guarda la donacion y su punto de entrega (con coordenadas y direccion).
 class PublicarDonacionView extends StatefulWidget {
   const PublicarDonacionView({super.key});
 
@@ -14,12 +16,17 @@ class PublicarDonacionView extends StatefulWidget {
   static Future<bool> abrir(
     BuildContext context, {
     required String donanteId,
+    UbicacionService? ubicacionService,
   }) async {
     final repo = context.read<DonacionRepository>();
     final publicada = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider(
-          create: (_) => PublicarDonacionViewModel(repo, donanteId: donanteId),
+          create: (_) => PublicarDonacionViewModel(
+            repo,
+            donanteId: donanteId,
+            ubicacionService: ubicacionService,
+          ),
           child: const PublicarDonacionView(),
         ),
       ),
@@ -69,15 +76,53 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
     });
   }
 
+  Future<void> _usarMiUbicacion() async {
+    final vm = context.read<PublicarDonacionViewModel>();
+    final res = await vm.obtenerUbicacionActual();
+    if (!mounted) return;
+    if (res != null) {
+      if (res.direccion != null && _puntoDireccion.text.trim().isEmpty) {
+        _puntoDireccion.text = res.direccion!;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ubicación actual obtenida por GPS'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else if (vm.mensajeError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(vm.mensajeError!)),
+      );
+    }
+  }
+
+  Future<void> _seleccionarEnMapa() async {
+    final vm = context.read<PublicarDonacionViewModel>();
+    final res = await SeleccionarUbicacionView.abrir(
+      context,
+      latitudInicial: vm.latitud,
+      longitudInicial: vm.longitud,
+    );
+    if (!mounted || res == null) return;
+    vm.fijarUbicacion(lat: res.latitud, lng: res.longitud);
+    if (res.direccion != null && _puntoDireccion.text.trim().isEmpty) {
+      _puntoDireccion.text = res.direccion!;
+    }
+  }
+
   Future<void> _publicar() async {
     if (!_formulario.currentState!.validate()) return;
-    final ok = await context.read<PublicarDonacionViewModel>().publicar(
-          descripcion: _descripcion.text,
-          cantidad: _cantidad.text,
-          fechaCaducidad: _fechaCaducidad,
-          puntoNombre: _puntoNombre.text,
-          puntoDireccion: _puntoDireccion.text,
-        );
+    final vm = context.read<PublicarDonacionViewModel>();
+    final ok = await vm.publicar(
+      descripcion: _descripcion.text,
+      cantidad: _cantidad.text,
+      fechaCaducidad: _fechaCaducidad,
+      puntoNombre: _puntoNombre.text,
+      puntoDireccion: _puntoDireccion.text,
+      latitud: vm.latitud,
+      longitud: vm.longitud,
+    );
     if (ok && mounted) Navigator.of(context).pop(true);
   }
 
@@ -152,7 +197,6 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
                   controller: _puntoDireccion,
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _publicar(),
                   decoration: const InputDecoration(
                     labelText: 'Dirección',
                     prefixIcon: Icon(Icons.place_outlined),
@@ -160,6 +204,65 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
                   validator: (v) => Validadores.obligatorio(
                       v, 'Escribe la dirección de entrega'),
                 ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      key: const Key('boton_usar_mi_ubicacion'),
+                      onPressed:
+                          vm.obteniendoUbicacion ? null : _usarMiUbicacion,
+                      icon: vm.obteniendoUbicacion
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.my_location, size: 18),
+                      label: const Text('Mi ubicación'),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('boton_elegir_en_mapa'),
+                      onPressed: _seleccionarEnMapa,
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: const Text('Elegir en el mapa'),
+                    ),
+                  ],
+                ),
+                if (vm.tieneCoordenadas) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.green.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle,
+                            color: Colors.green, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Coordenadas: ${vm.latitud!.toStringAsFixed(4)}, ${vm.longitud!.toStringAsFixed(4)}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Colors.green.shade800,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (vm.mensajeError != null) ...[
                   const SizedBox(height: 16),
                   MensajeError(vm.mensajeError!),
