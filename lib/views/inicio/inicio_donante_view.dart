@@ -10,6 +10,15 @@ class InicioDonanteView extends StatelessWidget {
 
   final Usuario usuario;
 
+  Future<void> _publicar(BuildContext context) async {
+    final publicada =
+        await PublicarDonacionView.abrir(context, donanteId: usuario.id);
+    if (!publicada || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Donación publicada')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,8 +48,7 @@ class InicioDonanteView extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        // TODO(T12): guardar en Firestore los datos que devuelve el formulario.
-        onPressed: () => PublicarDonacionView.abrir(context),
+        onPressed: () => _publicar(context),
         icon: const Icon(Icons.add),
         label: const Text('Publicar donación'),
       ),

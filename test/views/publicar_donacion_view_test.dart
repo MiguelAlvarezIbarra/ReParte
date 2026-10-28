@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:reparte/core/tema/tema_app.dart';
-import 'package:reparte/viewmodels/publicar_donacion_viewmodel.dart';
+import 'package:reparte/repositories/donacion_repository.dart';
 import 'package:reparte/views/donaciones/publicar_donacion_view.dart';
 
-void main() {
-  DatosDonacion? resultado;
+import '../fakes/donacion_repository_falso.dart';
 
-  setUp(() => resultado = null);
+void main() {
+  late DonacionRepositoryFalso repo;
+  bool? resultado;
+
+  setUp(() {
+    repo = DonacionRepositoryFalso();
+    resultado = null;
+  });
 
   /// Abre el formulario desde un boton, como lo hace la pantalla del donante.
   Future<void> abrirFormulario(WidgetTester tester) async {
@@ -17,16 +24,22 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TemaApp.claro,
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: TextButton(
-                onPressed: () async {
-                  resultado = await PublicarDonacionView.abrir(context);
-                },
-                child: const Text('abrir'),
+      Provider<DonacionRepository>.value(
+        value: repo,
+        child: MaterialApp(
+          theme: TemaApp.claro,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () async {
+                    resultado = await PublicarDonacionView.abrir(
+                      context,
+                      donanteId: 'd1',
+                    );
+                  },
+                  child: const Text('abrir'),
+                ),
               ),
             ),
           ),
@@ -78,10 +91,7 @@ void main() {
     expect(find.text('Escribe un número válido'), findsOneWidget);
   });
 
-  testWidgets('con datos validos devuelve la donacion capturada',
-      (tester) async {
-    await abrirFormulario(tester);
-
+  Future<void> llenarFormulario(WidgetTester tester) async {
     await tester.enterText(campo('Descripción'), 'Pan del dia');
     await tester.enterText(campo('Cantidad (kg)'), '3,5');
     await tester.tap(campo('Fecha de caducidad'));
@@ -91,16 +101,39 @@ void main() {
     await tester.enterText(
         campo('Nombre del punto de entrega'), 'Panaderia La Espiga');
     await tester.enterText(campo('Dirección'), 'Calle Hidalgo 12');
+  }
+
+  testWidgets('con datos validos publica la donacion y se cierra',
+      (tester) async {
+    await abrirFormulario(tester);
+    await llenarFormulario(tester);
+
     await tester.tap(botonPublicar());
     await tester.pumpAndSettle();
 
-    // El formulario se cerro y devolvio lo capturado.
+    // El formulario se cerro y la donacion quedo guardada.
     expect(botonPublicar(), findsNothing);
-    expect(resultado, isNotNull);
-    expect(resultado!.descripcion, 'Pan del dia');
-    expect(resultado!.cantidadKg, 3.5);
-    expect(resultado!.puntoNombre, 'Panaderia La Espiga');
-    expect(resultado!.puntoDireccion, 'Calle Hidalgo 12');
-    expect(resultado!.caducidad.isAfter(DateTime.now()), isTrue);
+    expect(resultado, isTrue);
+    final donacion = repo.creadas.single;
+    expect(donacion.descripcion, 'Pan del dia');
+    expect(donacion.cantidadKg, 3.5);
+    expect(donacion.donanteId, 'd1');
+    expect(donacion.caducidad.isAfter(DateTime.now()), isTrue);
+    expect(repo.puntosCreados.single.nombre, 'Panaderia La Espiga');
+    expect(repo.puntosCreados.single.direccion, 'Calle Hidalgo 12');
+  });
+
+  testWidgets('si falla al guardar muestra el error y no se cierra',
+      (tester) async {
+    repo.crearFalla = true;
+    await abrirFormulario(tester);
+    await llenarFormulario(tester);
+
+    await tester.tap(botonPublicar());
+    await tester.pumpAndSettle();
+
+    expect(botonPublicar(), findsOneWidget);
+    expect(find.textContaining('No se pudo publicar'), findsOneWidget);
+    expect(resultado, isNull);
   });
 }
