@@ -84,8 +84,8 @@ void main() {
     expect(vm.donanteNoDisponible, isTrue);
   });
 
-  test('con el repositorio sin implementar no truena', () async {
-    final vm = crear(DonacionRepository());
+  test('si la base de datos falla no truena', () async {
+    final vm = crear(DonacionRepository(firestore: FirestoreQueFalla()));
 
     await vm.cargar();
 

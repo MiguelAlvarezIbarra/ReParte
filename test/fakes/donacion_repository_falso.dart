@@ -3,10 +3,13 @@ import 'package:reparte/models/donacion.dart';
 import 'package:reparte/models/punto_entrega.dart';
 import 'package:reparte/models/usuario.dart';
 import 'package:reparte/repositories/donacion_repository.dart';
+import 'package:reparte/services/firestore_service.dart';
 
 /// Repositorio de mentira para pruebas: las donaciones se "publican" a mano
 /// con [emitir], igual que llegarian desde Firestore en tiempo real.
 class DonacionRepositoryFalso extends DonacionRepository {
+  DonacionRepositoryFalso() : super(firestore: FirestoreQueFalla());
+
   final controlador = StreamController<List<Donacion>>();
 
   /// Punto de entrega que devuelve [obtenerPuntoEntrega].
@@ -66,3 +69,18 @@ const puntoDePrueba = PuntoEntrega(
   longitud: -99.1,
   horario: '18:00 a 20:30',
 );
+
+/// Base de datos sin conexion: toda lectura falla, como sin internet.
+class FirestoreQueFalla extends FirestoreService {
+  @override
+  Future<Map<String, dynamic>?> leerDocumento(String coleccion, String id) =>
+      Future.error(Exception('sin conexion'));
+
+  @override
+  Stream<List<Documento>> observarDonde(
+    String coleccion, {
+    required String campo,
+    required Object valor,
+  }) =>
+      Stream.error(Exception('sin conexion'));
+}
