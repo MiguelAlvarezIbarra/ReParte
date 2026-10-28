@@ -8,6 +8,7 @@ void main() {
   late DonacionRepositoryFalso repo;
   late PublicarDonacionViewModel vm;
   final manana = DateTime.now().add(const Duration(days: 1));
+  final ayer = DateTime.now().subtract(const Duration(days: 1));
 
   setUp(() {
     repo = DonacionRepositoryFalso();
@@ -73,6 +74,62 @@ void main() {
       isFalse,
     );
     expect(vm.mensajeError, 'Elige la fecha de caducidad');
+  });
+
+  test('fecha de caducidad pasada reporta su error (criterio T14)', () {
+    final ok = vm.preparar(
+      descripcion: 'Pan',
+      cantidad: '3',
+      fechaCaducidad: ayer,
+      puntoNombre: 'Punto',
+      puntoDireccion: 'Calle 1',
+    );
+
+    expect(ok, isFalse);
+    expect(vm.mensajeError, 'Esa fecha ya pasó');
+    expect(vm.borrador, isNull);
+  });
+
+  test('campos de punto vacios o con solo espacios reportan error (criterio T14)',
+      () {
+    expect(
+      vm.preparar(
+        descripcion: 'Pan',
+        cantidad: '3',
+        fechaCaducidad: manana,
+        puntoNombre: '   ',
+        puntoDireccion: 'Calle 1',
+      ),
+      isFalse,
+    );
+    expect(vm.mensajeError, 'Escribe el nombre del punto de entrega');
+
+    expect(
+      vm.preparar(
+        descripcion: 'Pan',
+        cantidad: '3',
+        fechaCaducidad: manana,
+        puntoNombre: 'Punto',
+        puntoDireccion: '   ',
+      ),
+      isFalse,
+    );
+    expect(vm.mensajeError, 'Escribe la dirección de entrega');
+  });
+
+  test('donanteId vacio reporta error', () {
+    final vmSinDonante = PublicarDonacionViewModel(repo, donanteId: '   ');
+    expect(
+      vmSinDonante.preparar(
+        descripcion: 'Pan',
+        cantidad: '3',
+        fechaCaducidad: manana,
+        puntoNombre: 'Punto',
+        puntoDireccion: 'Calle 1',
+      ),
+      isFalse,
+    );
+    expect(vmSinDonante.mensajeError, 'Identificador de donante inválido');
   });
 
   test('un intento correcto despues de un error limpia el mensaje', () {
@@ -167,6 +224,39 @@ void main() {
 
       expect(ok, isFalse);
       expect(vm.estado, EstadoUI.error);
+      expect(repo.creadas, isEmpty);
+      expect(repo.puntosCreados, isEmpty);
+    });
+
+    test('con fecha de caducidad pasada no guarda nada (criterio T14)',
+        () async {
+      final ok = await vm.publicar(
+        descripcion: 'Pan',
+        cantidad: '5',
+        fechaCaducidad: ayer,
+        puntoNombre: 'Punto',
+        puntoDireccion: 'Calle 1',
+      );
+
+      expect(ok, isFalse);
+      expect(vm.estado, EstadoUI.error);
+      expect(vm.mensajeError, 'Esa fecha ya pasó');
+      expect(repo.creadas, isEmpty);
+      expect(repo.puntosCreados, isEmpty);
+    });
+
+    test('con cantidad en cero no guarda nada (criterio T14)', () async {
+      final ok = await vm.publicar(
+        descripcion: 'Pan',
+        cantidad: '0',
+        fechaCaducidad: manana,
+        puntoNombre: 'Punto',
+        puntoDireccion: 'Calle 1',
+      );
+
+      expect(ok, isFalse);
+      expect(vm.estado, EstadoUI.error);
+      expect(vm.mensajeError, 'La cantidad debe ser mayor a 0');
       expect(repo.creadas, isEmpty);
       expect(repo.puntosCreados, isEmpty);
     });

@@ -86,6 +86,11 @@ class PublicarDonacionViewModel extends ChangeNotifier {
       estado = EstadoUI.listo;
       notifyListeners();
       return true;
+    } on ArgumentError catch (e) {
+      mensajeError = e.message?.toString() ?? 'Datos de la donación inválidos';
+      estado = EstadoUI.error;
+      notifyListeners();
+      return false;
     } catch (_) {
       mensajeError = 'No se pudo publicar la donación. '
           'Revisa tu conexión e intenta de nuevo.';
@@ -123,14 +128,15 @@ class PublicarDonacionViewModel extends ChangeNotifier {
     required String puntoNombre,
     required String puntoDireccion,
   }) {
-    final error =
+    final error = Validadores.obligatorio(
+            donanteId, 'Identificador de donante inválido') ??
         Validadores.obligatorio(descripcion, 'Describe qué vas a donar') ??
-            Validadores.cantidadKg(cantidad) ??
-            Validadores.caducidad(fechaCaducidad) ??
-            Validadores.obligatorio(
-                puntoNombre, 'Escribe el nombre del punto de entrega') ??
-            Validadores.obligatorio(
-                puntoDireccion, 'Escribe la dirección de entrega');
+        Validadores.cantidadKg(cantidad) ??
+        Validadores.caducidad(fechaCaducidad) ??
+        Validadores.obligatorio(
+            puntoNombre, 'Escribe el nombre del punto de entrega') ??
+        Validadores.obligatorio(
+            puntoDireccion, 'Escribe la dirección de entrega');
 
     if (error != null) {
       borrador = null;

@@ -89,6 +89,97 @@ void main() {
       expect(caducada.estaVigente, isFalse);
       expect(caducada.estaDisponible, isFalse);
     });
+
+    group('validar (T14)', () {
+      final ahora = DateTime(2026, 10, 28, 12);
+
+      Donacion crear({
+        String descripcion = 'Pan dulce',
+        double cantidadKg = 2.0,
+        DateTime? caducidad,
+        String donanteId = 'd1',
+        String puntoEntregaId = 'p1',
+      }) {
+        return Donacion(
+          id: 'd1',
+          donanteId: donanteId,
+          descripcion: descripcion,
+          cantidadKg: cantidadKg,
+          caducidad: caducidad ?? DateTime(2026, 10, 29),
+          puntoEntregaId: puntoEntregaId,
+          creadaEn: ahora,
+        );
+      }
+
+      test('acepta donacion valida', () {
+        expect(() => crear().validar(ahora: ahora), returnsNormally);
+      });
+
+      test('rechaza campos vacios o con solo espacios', () {
+        expect(
+          () => crear(descripcion: '').validar(ahora: ahora),
+          throwsA(isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('descripción'),
+          )),
+        );
+        expect(
+          () => crear(descripcion: '   ').validar(ahora: ahora),
+          throwsA(isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('descripción'),
+          )),
+        );
+        expect(
+          () => crear(donanteId: '').validar(ahora: ahora),
+          throwsA(isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('donante'),
+          )),
+        );
+        expect(
+          () => crear(puntoEntregaId: '   ').validar(ahora: ahora),
+          throwsA(isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('punto de entrega'),
+          )),
+        );
+      });
+
+      test('rechaza cantidad en cero o negativa', () {
+        expect(
+          () => crear(cantidadKg: 0).validar(ahora: ahora),
+          throwsA(isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('mayor a 0'),
+          )),
+        );
+        expect(
+          () => crear(cantidadKg: -1.5).validar(ahora: ahora),
+          throwsA(isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('mayor a 0'),
+          )),
+        );
+      });
+
+      test('rechaza fecha de caducidad pasada', () {
+        expect(
+          () => crear(caducidad: DateTime(2026, 10, 27)).validar(ahora: ahora),
+          throwsA(isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('ya pasó'),
+          )),
+        );
+      });
+    });
   });
 
   group('PuntoEntrega', () {
@@ -110,6 +201,52 @@ void main() {
       expect(copia.latitud, 21.1561);
       expect(copia.longitud, -100.9346);
       expect(copia.horario, '18:00 a 20:30');
+    });
+
+    group('validar (T14)', () {
+      test('acepta punto valido', () {
+        const punto = PuntoEntrega(
+          id: 'p1',
+          donanteId: 'u1',
+          nombre: 'La Esquina',
+          direccion: 'Calle 10',
+          latitud: 0,
+          longitud: 0,
+        );
+        expect(() => punto.validar(), returnsNormally);
+      });
+
+      test('rechaza campos obligatorios vacios', () {
+        const sinDonante = PuntoEntrega(
+          id: '',
+          donanteId: '  ',
+          nombre: 'Punto',
+          direccion: 'Dir',
+          latitud: 0,
+          longitud: 0,
+        );
+        expect(() => sinDonante.validar(), throwsA(isA<ArgumentError>()));
+
+        const sinNombre = PuntoEntrega(
+          id: '',
+          donanteId: 'u1',
+          nombre: '',
+          direccion: 'Dir',
+          latitud: 0,
+          longitud: 0,
+        );
+        expect(() => sinNombre.validar(), throwsA(isA<ArgumentError>()));
+
+        const sinDireccion = PuntoEntrega(
+          id: '',
+          donanteId: 'u1',
+          nombre: 'Punto',
+          direccion: '  ',
+          latitud: 0,
+          longitud: 0,
+        );
+        expect(() => sinDireccion.validar(), throwsA(isA<ArgumentError>()));
+      });
     });
   });
 }

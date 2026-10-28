@@ -18,7 +18,7 @@ void main() {
     donanteId: 'u1',
     descripcion: '12 porciones de comida corrida',
     cantidadKg: 6.5,
-    caducidad: DateTime(2026, 11, 2, 23, 59),
+    caducidad: DateTime.now().add(const Duration(days: 5)),
     puntoEntregaId: 'p1',
     creadaEn: DateTime(2026, 10, 28, 18),
   );
@@ -38,6 +38,90 @@ void main() {
         .called(1);
   });
 
+  group('validaciones antes de guardar en crear (T14)', () {
+    test('rechaza donacion con descripcion vacia y no la guarda', () async {
+      final invalida = Donacion(
+        id: '',
+        donanteId: 'u1',
+        descripcion: '   ',
+        cantidadKg: 5,
+        caducidad: DateTime.now().add(const Duration(days: 2)),
+        puntoEntregaId: 'p1',
+        creadaEn: DateTime.now(),
+      );
+
+      expect(() => repo.crear(invalida), throwsA(isA<ArgumentError>()));
+      verifyNever(firestore.agregarDocumento(any, any));
+    });
+
+    test('rechaza donacion con cantidad en cero o negativa y no la guarda',
+        () async {
+      final cantidadCero = Donacion(
+        id: '',
+        donanteId: 'u1',
+        descripcion: 'Pan',
+        cantidadKg: 0,
+        caducidad: DateTime.now().add(const Duration(days: 2)),
+        puntoEntregaId: 'p1',
+        creadaEn: DateTime.now(),
+      );
+      final cantidadNegativa = Donacion(
+        id: '',
+        donanteId: 'u1',
+        descripcion: 'Pan',
+        cantidadKg: -2,
+        caducidad: DateTime.now().add(const Duration(days: 2)),
+        puntoEntregaId: 'p1',
+        creadaEn: DateTime.now(),
+      );
+
+      expect(() => repo.crear(cantidadCero), throwsA(isA<ArgumentError>()));
+      expect(() => repo.crear(cantidadNegativa), throwsA(isA<ArgumentError>()));
+      verifyNever(firestore.agregarDocumento(any, any));
+    });
+
+    test('rechaza donacion con fecha de caducidad pasada y no la guarda',
+        () async {
+      final pasada = Donacion(
+        id: '',
+        donanteId: 'u1',
+        descripcion: 'Pan',
+        cantidadKg: 3,
+        caducidad: DateTime.now().subtract(const Duration(days: 2)),
+        puntoEntregaId: 'p1',
+        creadaEn: DateTime.now(),
+      );
+
+      expect(() => repo.crear(pasada), throwsA(isA<ArgumentError>()));
+      verifyNever(firestore.agregarDocumento(any, any));
+    });
+
+    test('rechaza donacion con donante o punto vacios y no la guarda', () async {
+      final sinDonante = Donacion(
+        id: '',
+        donanteId: '',
+        descripcion: 'Pan',
+        cantidadKg: 3,
+        caducidad: DateTime.now().add(const Duration(days: 2)),
+        puntoEntregaId: 'p1',
+        creadaEn: DateTime.now(),
+      );
+      final sinPunto = Donacion(
+        id: '',
+        donanteId: 'u1',
+        descripcion: 'Pan',
+        cantidadKg: 3,
+        caducidad: DateTime.now().add(const Duration(days: 2)),
+        puntoEntregaId: '',
+        creadaEn: DateTime.now(),
+      );
+
+      expect(() => repo.crear(sinDonante), throwsA(isA<ArgumentError>()));
+      expect(() => repo.crear(sinPunto), throwsA(isA<ArgumentError>()));
+      verifyNever(firestore.agregarDocumento(any, any));
+    });
+  });
+
   test('crearPuntoEntrega guarda en puntos_entrega y devuelve el id', () async {
     const punto = PuntoEntrega(
       id: '',
@@ -52,6 +136,22 @@ void main() {
     expect(await repo.crearPuntoEntrega(punto), 'p7');
     verify(firestore.agregarDocumento('puntos_entrega', punto.toMap()))
         .called(1);
+  });
+
+  test('crearPuntoEntrega rechaza punto con datos vacios y no guarda',
+      () async {
+    const puntoInvalido = PuntoEntrega(
+      id: '',
+      donanteId: '',
+      nombre: 'La Esquina',
+      direccion: 'Av. Universidad 210',
+      latitud: 0,
+      longitud: 0,
+    );
+
+    expect(() => repo.crearPuntoEntrega(puntoInvalido),
+        throwsA(isA<ArgumentError>()));
+    verifyNever(firestore.agregarDocumento(any, any));
   });
 
   test('observarDisponibles consulta solo las disponibles y las convierte',

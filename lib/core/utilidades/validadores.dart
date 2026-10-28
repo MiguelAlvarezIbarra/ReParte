@@ -43,7 +43,9 @@ class Validadores {
   static String? cantidadKg(String? valor) {
     if (valor == null || valor.trim().isEmpty) return 'Escribe la cantidad';
     final cantidad = parsearCantidad(valor);
-    if (cantidad == null) return 'Escribe un número válido';
+    if (cantidad == null || cantidad.isNaN || !cantidad.isFinite) {
+      return 'Escribe un número válido';
+    }
     if (cantidad <= 0) return 'La cantidad debe ser mayor a 0';
     return null;
   }

@@ -7,14 +7,24 @@ void main() {
       expect(Validadores.cantidadKg('5'), isNull);
       expect(Validadores.cantidadKg('2.5'), isNull);
       expect(Validadores.cantidadKg('2,5'), isNull);
+      expect(Validadores.cantidadKg(' 10.75 '), isNull);
     });
 
-    test('rechaza vacio, texto y valores menores o iguales a cero', () {
+    test('rechaza vacio, espacios, texto y valores no numericos', () {
       expect(Validadores.cantidadKg(''), 'Escribe la cantidad');
+      expect(Validadores.cantidadKg('   '), 'Escribe la cantidad');
       expect(Validadores.cantidadKg(null), 'Escribe la cantidad');
       expect(Validadores.cantidadKg('abc'), 'Escribe un número válido');
+      expect(Validadores.cantidadKg('NaN'), 'Escribe un número válido');
+      expect(Validadores.cantidadKg('Infinity'), 'Escribe un número válido');
+    });
+
+    test('rechaza cero y valores negativos (criterio T14)', () {
       expect(Validadores.cantidadKg('0'), 'La cantidad debe ser mayor a 0');
-      expect(Validadores.cantidadKg('-3'), 'La cantidad debe ser mayor a 0');
+      expect(Validadores.cantidadKg('0.0'), 'La cantidad debe ser mayor a 0');
+      expect(Validadores.cantidadKg('0,0'), 'La cantidad debe ser mayor a 0');
+      expect(Validadores.cantidadKg('-1'), 'La cantidad debe ser mayor a 0');
+      expect(Validadores.cantidadKg('-0.5'), 'La cantidad debe ser mayor a 0');
     });
 
     test('parsearCantidad convierte la coma decimal', () {
@@ -24,7 +34,7 @@ void main() {
   });
 
   group('caducidad', () {
-    final hoy = DateTime(2026, 10, 24, 15, 30);
+    final hoy = DateTime(2026, 10, 28, 15, 30);
 
     test('exige una fecha', () {
       expect(Validadores.caducidad(null, ahora: hoy),
@@ -32,19 +42,30 @@ void main() {
     });
 
     test('acepta hoy y fechas futuras', () {
-      expect(Validadores.caducidad(DateTime(2026, 10, 24), ahora: hoy), isNull);
+      expect(Validadores.caducidad(DateTime(2026, 10, 28), ahora: hoy), isNull);
+      expect(Validadores.caducidad(DateTime(2026, 10, 28, 23, 59), ahora: hoy),
+          isNull);
       expect(Validadores.caducidad(DateTime(2026, 10, 30), ahora: hoy), isNull);
     });
 
-    test('rechaza fechas pasadas', () {
-      expect(Validadores.caducidad(DateTime(2026, 10, 23), ahora: hoy),
+    test('rechaza fechas pasadas (criterio T14)', () {
+      expect(Validadores.caducidad(DateTime(2026, 10, 27), ahora: hoy),
+          'Esa fecha ya pasó');
+      expect(Validadores.caducidad(DateTime(2026, 1, 1), ahora: hoy),
+          'Esa fecha ya pasó');
+      expect(Validadores.caducidad(DateTime(2025, 10, 28), ahora: hoy),
           'Esa fecha ya pasó');
     });
   });
 
-  test('obligatorio muestra el mensaje cuando va vacio', () {
-    expect(Validadores.obligatorio('  ', 'Falta'), 'Falta');
-    expect(Validadores.obligatorio(null, 'Falta'), 'Falta');
-    expect(Validadores.obligatorio('algo', 'Falta'), isNull);
+  group('obligatorio', () {
+    test('muestra el mensaje cuando va vacio o solo con espacios (criterio T14)',
+        () {
+      expect(Validadores.obligatorio('', 'Falta'), 'Falta');
+      expect(Validadores.obligatorio('  ', 'Falta'), 'Falta');
+      expect(Validadores.obligatorio('\n\t  ', 'Falta'), 'Falta');
+      expect(Validadores.obligatorio(null, 'Falta'), 'Falta');
+      expect(Validadores.obligatorio('algo', 'Falta'), isNull);
+    });
   });
 }
