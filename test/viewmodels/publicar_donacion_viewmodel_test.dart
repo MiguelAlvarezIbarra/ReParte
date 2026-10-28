@@ -3,16 +3,23 @@ import 'package:reparte/viewmodels/estado_ui.dart';
 import 'package:reparte/viewmodels/publicar_donacion_viewmodel.dart';
 
 import '../fakes/donacion_repository_falso.dart';
+import '../fakes/ubicacion_service_falso.dart';
 
 void main() {
   late DonacionRepositoryFalso repo;
+  late UbicacionServiceFalso ubicacionService;
   late PublicarDonacionViewModel vm;
   final manana = DateTime.now().add(const Duration(days: 1));
   final ayer = DateTime.now().subtract(const Duration(days: 1));
 
   setUp(() {
     repo = DonacionRepositoryFalso();
-    vm = PublicarDonacionViewModel(repo, donanteId: 'd1');
+    ubicacionService = UbicacionServiceFalso();
+    vm = PublicarDonacionViewModel(
+      repo,
+      donanteId: 'd1',
+      ubicacionService: ubicacionService,
+    );
   });
 
   test('con datos validos arma el borrador limpio', () {
@@ -22,6 +29,8 @@ void main() {
       fechaCaducidad: manana,
       puntoNombre: ' Panaderia La Espiga ',
       puntoDireccion: ' Calle Hidalgo 12 ',
+      latitud: 21.1561,
+      longitud: -100.9346,
     );
 
     expect(ok, isTrue);
@@ -31,6 +40,8 @@ void main() {
     expect(borrador.cantidadKg, 2.5);
     expect(borrador.puntoNombre, 'Panaderia La Espiga');
     expect(borrador.puntoDireccion, 'Calle Hidalgo 12');
+    expect(borrador.latitud, 21.1561);
+    expect(borrador.longitud, -100.9346);
     // La donacion vale todo el dia elegido.
     expect(borrador.caducidad,
         DateTime(manana.year, manana.month, manana.day, 23, 59));
@@ -118,7 +129,11 @@ void main() {
   });
 
   test('donanteId vacio reporta error', () {
-    final vmSinDonante = PublicarDonacionViewModel(repo, donanteId: '   ');
+    final vmSinDonante = PublicarDonacionViewModel(
+      repo,
+      donanteId: '   ',
+      ubicacionService: ubicacionService,
+    );
     expect(
       vmSinDonante.preparar(
         descripcion: 'Pan',
@@ -168,16 +183,64 @@ void main() {
     expect(avisos, 1);
   });
 
+  group('ubicacion y mapa (T15)', () {
+    test('obtenerUbicacionActual pide permiso y obtiene coordenadas y direccion',
+        () async {
+      expect(vm.tieneCoordenadas, isFalse);
+
+      final res = await vm.obtenerUbicacionActual();
+
+      expect(ubicacionService.llamadasSolicitarPermiso, 1);
+      expect(ubicacionService.llamadasObtenerUbicacion, 1);
+      expect(ubicacionService.llamadasObtenerDireccion, 1);
+      expect(res, isNotNull);
+      expect(res!.latitud, 21.1561);
+      expect(res.longitud, -100.9346);
+      expect(res.direccion, 'Calle Hidalgo 12, Dolores Hidalgo');
+      expect(vm.latitud, 21.1561);
+      expect(vm.longitud, -100.9346);
+      expect(vm.tieneCoordenadas, isTrue);
+      expect(vm.mensajeError, isNull);
+    });
+
+    test('sin permiso de ubicacion reporta error y no fija coordenadas',
+        () async {
+      ubicacionService.permisoConcedido = false;
+
+      final res = await vm.obtenerUbicacionActual();
+
+      expect(res, isNull);
+      expect(vm.latitud, isNull);
+      expect(vm.tieneCoordenadas, isFalse);
+      expect(vm.mensajeError, contains('permisos'));
+    });
+
+    test('fijarUbicacion actualiza las coordenadas y avisa a los oyentes', () {
+      var notificado = false;
+      vm.addListener(() => notificado = true);
+
+      vm.fijarUbicacion(lat: 20.5, lng: -100.2);
+
+      expect(vm.latitud, 20.5);
+      expect(vm.longitud, -100.2);
+      expect(vm.tieneCoordenadas, isTrue);
+      expect(notificado, isTrue);
+    });
+  });
+
   group('publicar', () {
-    Future<bool> publicarValida() => vm.publicar(
+    Future<bool> publicarValida({double lat = 21.1561, double lng = -100.9346}) =>
+        vm.publicar(
           descripcion: ' 20 panes del dia ',
           cantidad: '2,5',
           fechaCaducidad: manana,
           puntoNombre: 'Panaderia La Espiga',
           puntoDireccion: 'Calle Hidalgo 12',
+          latitud: lat,
+          longitud: lng,
         );
 
-    test('guarda el punto de entrega y la donacion a nombre del donante',
+    test('guarda el punto de entrega con coordenadas y direccion (criterio T15)',
         () async {
       final ok = await publicarValida();
 
@@ -185,7 +248,10 @@ void main() {
       expect(vm.estado, EstadoUI.listo);
       final punto = repo.puntosCreados.single;
       expect(punto.donanteId, 'd1');
+      expect(punto.nombre, 'Panaderia La Espiga');
       expect(punto.direccion, 'Calle Hidalgo 12');
+      expect(punto.latitud, 21.1561);
+      expect(punto.longitud, -100.9346);
       final donacion = repo.creadas.single;
       expect(donacion.donanteId, 'd1');
       expect(donacion.descripcion, '20 panes del dia');

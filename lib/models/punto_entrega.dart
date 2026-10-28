@@ -21,7 +21,8 @@ class PuntoEntrega {
     this.horario = '',
   });
 
-  /// Valida que el punto de entrega tenga datos obligatorios no vacios.
+  /// Valida que el punto de entrega tenga datos obligatorios no vacios
+  /// y coordenadas geográficas válidas.
   /// Lanza [ArgumentError] si algun campo es invalido.
   void validar() {
     if (donanteId.trim().isEmpty) {
@@ -32,6 +33,12 @@ class PuntoEntrega {
     }
     if (direccion.trim().isEmpty) {
       throw ArgumentError('La dirección de entrega es obligatoria');
+    }
+    if (latitud.isNaN || !latitud.isFinite || longitud.isNaN || !longitud.isFinite) {
+      throw ArgumentError('Las coordenadas son inválidas');
+    }
+    if (latitud < -90 || latitud > 90 || longitud < -180 || longitud > 180) {
+      throw ArgumentError('Las coordenadas están fuera de rango');
     }
   }
 
