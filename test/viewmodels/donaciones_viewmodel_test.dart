@@ -70,7 +70,8 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(vm.donaciones.map((d) => d.id), ['a']);
 
-    repo.emitir([donacionDePrueba('b', dias: 1), donacionDePrueba('a', dias: 2)]);
+    repo.emitir(
+        [donacionDePrueba('b', dias: 1), donacionDePrueba('a', dias: 2)]);
     await Future<void>.delayed(Duration.zero);
     expect(vm.donaciones.map((d) => d.id), ['b', 'a']);
     expect(avisos, 2);
@@ -108,10 +109,13 @@ void main() {
     expect(vm.mensajeError, isNull);
   });
 
-  test('si el repositorio aun no esta implementado muestra el error', () {
-    final sinImplementar = DonacionesViewModel(DonacionRepository());
+  test('si la base de datos falla muestra el error', () async {
+    final sinImplementar = DonacionesViewModel(
+      DonacionRepository(firestore: FirestoreQueFalla()),
+    );
 
     sinImplementar.escuchar();
+    await Future<void>.delayed(Duration.zero);
 
     expect(sinImplementar.estado, EstadoUI.error);
     expect(sinImplementar.mensajeError, isNotNull);

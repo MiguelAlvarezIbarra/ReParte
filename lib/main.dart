@@ -20,10 +20,12 @@ Future<void> main() async {
   );
 
   // Una sola instancia de cada servicio, inyectada hacia arriba.
+  final firestore = FirestoreService();
   final usuarioRepository = UsuarioRepository(
     auth: AuthService(),
-    firestore: FirestoreService(),
+    firestore: firestore,
   );
+  final donacionRepository = DonacionRepository(firestore: firestore);
 
   runApp(
     MultiProvider(
@@ -32,7 +34,7 @@ Future<void> main() async {
           create: (_) => LoginViewModel(usuarioRepository),
         ),
         Provider<UsuarioRepository>.value(value: usuarioRepository),
-        Provider<DonacionRepository>(create: (_) => DonacionRepository()),
+        Provider<DonacionRepository>.value(value: donacionRepository),
       ],
       child: const ReParteApp(),
     ),

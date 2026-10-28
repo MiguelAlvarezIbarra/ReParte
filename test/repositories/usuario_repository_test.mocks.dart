@@ -134,4 +134,48 @@ class MockFirestoreService extends _i1.Mock implements _i5.FirestoreService {
         returnValue: _i3.Future<void>.value(),
         returnValueForMissingStub: _i3.Future<void>.value(),
       ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<String> agregarDocumento(
+    String? coleccion,
+    Map<String, dynamic>? datos,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #agregarDocumento,
+          [
+            coleccion,
+            datos,
+          ],
+        ),
+        returnValue: _i3.Future<String>.value(_i4.dummyValue<String>(
+          this,
+          Invocation.method(
+            #agregarDocumento,
+            [
+              coleccion,
+              datos,
+            ],
+          ),
+        )),
+      ) as _i3.Future<String>);
+
+  @override
+  _i3.Stream<List<({Map<String, dynamic> datos, String id})>> observarDonde(
+    String? coleccion, {
+    required String? campo,
+    required Object? valor,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #observarDonde,
+          [coleccion],
+          {
+            #campo: campo,
+            #valor: valor,
+          },
+        ),
+        returnValue:
+            _i3.Stream<List<({Map<String, dynamic> datos, String id})>>.empty(),
+      ) as _i3.Stream<List<({Map<String, dynamic> datos, String id})>>);
 }
