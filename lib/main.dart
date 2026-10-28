@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/tema/tema_app.dart';
 import 'firebase_options.dart';
+import 'repositories/donacion_repository.dart';
 import 'repositories/usuario_repository.dart';
 import 'routes/rutas.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
+import 'services/ubicacion_service.dart';
 import 'viewmodels/login_viewmodel.dart';
 import 'views/auth/registro_view.dart';
 import 'views/inicio/puerta_acceso.dart';
@@ -19,10 +21,13 @@ Future<void> main() async {
   );
 
   // Una sola instancia de cada servicio, inyectada hacia arriba.
+  final firestore = FirestoreService();
   final usuarioRepository = UsuarioRepository(
     auth: AuthService(),
-    firestore: FirestoreService(),
+    firestore: firestore,
   );
+  final donacionRepository = DonacionRepository(firestore: firestore);
+  const ubicacionService = GeolocatorUbicacionService();
 
   runApp(
     MultiProvider(
@@ -30,6 +35,9 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => LoginViewModel(usuarioRepository),
         ),
+        Provider<UsuarioRepository>.value(value: usuarioRepository),
+        Provider<DonacionRepository>.value(value: donacionRepository),
+        Provider<UbicacionService>.value(value: ubicacionService),
       ],
       child: const ReParteApp(),
     ),

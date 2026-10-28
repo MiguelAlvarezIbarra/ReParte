@@ -4,12 +4,14 @@ import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:reparte/core/tema/tema_app.dart';
 import 'package:reparte/models/usuario.dart';
+import 'package:reparte/repositories/donacion_repository.dart';
 import 'package:reparte/viewmodels/login_viewmodel.dart';
 import 'package:reparte/views/auth/login_view.dart';
 import 'package:reparte/views/inicio/inicio_asociacion_view.dart';
 import 'package:reparte/views/inicio/inicio_donante_view.dart';
 import 'package:reparte/views/inicio/puerta_acceso.dart';
 
+import '../fakes/donacion_repository_falso.dart';
 import '../viewmodels/login_viewmodel_test.mocks.dart';
 
 void main() {
@@ -31,9 +33,14 @@ void main() {
   setUp(() => repo = MockUsuarioRepository());
 
   Future<void> abrirApp(WidgetTester tester) async {
+    // La pantalla de la asociacion lista donaciones; aqui llegan sin datos.
+    final donaciones = DonacionRepositoryFalso()..emitir([]);
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => LoginViewModel(repo),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => LoginViewModel(repo)),
+          Provider<DonacionRepository>.value(value: donaciones),
+        ],
         child: MaterialApp(theme: TemaApp.claro, home: const PuertaAcceso()),
       ),
     );

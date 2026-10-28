@@ -2,12 +2,22 @@ import 'package:flutter/material.dart';
 import '../../models/usuario.dart';
 import '../../widgets/boton_cerrar_sesion.dart';
 import '../../widgets/estado_vacio.dart';
+import '../donaciones/publicar_donacion_view.dart';
 
 /// Pantalla principal del donante: sus donaciones y el boton para publicar.
 class InicioDonanteView extends StatelessWidget {
   const InicioDonanteView({super.key, required this.usuario});
 
   final Usuario usuario;
+
+  Future<void> _publicar(BuildContext context) async {
+    final publicada =
+        await PublicarDonacionView.abrir(context, donanteId: usuario.id);
+    if (!publicada || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Donación publicada')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +48,7 @@ class InicioDonanteView extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        // TODO(T11): abrir el formulario de publicar donacion.
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Disponible en el Sprint 2')),
-        ),
+        onPressed: () => _publicar(context),
         icon: const Icon(Icons.add),
         label: const Text('Publicar donación'),
       ),

@@ -21,6 +21,27 @@ class PuntoEntrega {
     this.horario = '',
   });
 
+  /// Valida que el punto de entrega tenga datos obligatorios no vacios
+  /// y coordenadas geográficas válidas.
+  /// Lanza [ArgumentError] si algun campo es invalido.
+  void validar() {
+    if (donanteId.trim().isEmpty) {
+      throw ArgumentError('El donante es obligatorio');
+    }
+    if (nombre.trim().isEmpty) {
+      throw ArgumentError('El nombre del punto de entrega es obligatorio');
+    }
+    if (direccion.trim().isEmpty) {
+      throw ArgumentError('La dirección de entrega es obligatoria');
+    }
+    if (latitud.isNaN || !latitud.isFinite || longitud.isNaN || !longitud.isFinite) {
+      throw ArgumentError('Las coordenadas son inválidas');
+    }
+    if (latitud < -90 || latitud > 90 || longitud < -180 || longitud > 180) {
+      throw ArgumentError('Las coordenadas están fuera de rango');
+    }
+  }
+
   factory PuntoEntrega.fromMap(String id, Map<String, dynamic> map) {
     return PuntoEntrega(
       id: id,
