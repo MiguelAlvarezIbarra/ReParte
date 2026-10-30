@@ -96,7 +96,8 @@ void main() {
       verifyNever(firestore.agregarDocumento(any, any));
     });
 
-    test('rechaza donacion con donante o punto vacios y no la guarda', () async {
+    test('rechaza donacion con donante o punto vacios y no la guarda',
+        () async {
       final sinDonante = Donacion(
         id: '',
         donanteId: '',
@@ -202,5 +203,54 @@ void main() {
 
     expect(punto?.direccion, 'Av. Universidad 210');
     expect(await repo.obtenerPuntoEntrega('nada'), isNull);
+  });
+
+  group('cuando Firestore falla (T18)', () {
+    test('crear propaga el error para que el ViewModel lo muestre', () async {
+      when(firestore.agregarDocumento(any, any))
+          .thenAnswer((_) => Future.error(Exception('sin conexion')));
+
+      await expectLater(repo.crear(donacion), throwsA(isA<Exception>()));
+    });
+
+    test('obtenerPuntoEntrega propaga el error de lectura', () async {
+      when(firestore.leerDocumento(any, any))
+          .thenAnswer((_) => Future.error(Exception('sin conexion')));
+
+      await expectLater(
+        repo.obtenerPuntoEntrega('p1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('observarDisponibles entrega el error del tiempo real', () async {
+      when(firestore.observarDonde(any,
+              campo: anyNamed('campo'), valor: anyNamed('valor')))
+          .thenAnswer((_) => Stream.error(Exception('permiso denegado')));
+
+      await expectLater(
+        repo.observarDisponibles(),
+        emitsError(isA<Exception>()),
+      );
+    });
+
+    test('despues de un error sigue entregando las listas nuevas', () async {
+      when(firestore.observarDonde(any,
+              campo: anyNamed('campo'), valor: anyNamed('valor')))
+          .thenAnswer((_) => Stream.fromIterable([
+                [(id: 'd1', datos: donacion.toMap())],
+              ]).asyncExpand((lista) async* {
+                yield* Stream<List<Documento>>.error(Exception('corte'));
+                yield lista;
+              }));
+
+      await expectLater(
+        repo.observarDisponibles(),
+        emitsInOrder([
+          emitsError(isA<Exception>()),
+          predicate<List>((lista) => lista.length == 1),
+        ]),
+      );
+    });
   });
 }
