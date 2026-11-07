@@ -26,7 +26,7 @@ class InicioAsociacionView extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          const Expanded(child: ListaDonaciones()),
+          Expanded(child: ListaDonaciones(asociacionId: usuario.id)),
         ],
       ),
     );

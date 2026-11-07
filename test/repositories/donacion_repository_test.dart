@@ -253,4 +253,59 @@ void main() {
       );
     });
   });
+
+  group('reservar (T19)', () {
+    final guardada = Donacion(
+      id: 'd1',
+      donanteId: 'u1',
+      descripcion: 'Pan del dia',
+      cantidadKg: 3,
+      caducidad: DateTime.now().add(const Duration(days: 1)),
+      puntoEntregaId: 'p1',
+      creadaEn: DateTime(2026, 11, 7),
+    );
+
+    test('cambia el estado a reservada con la asociacion y la fecha',
+        () async {
+      when(firestore.actualizarDocumento(any, any, any))
+          .thenAnswer((_) async {});
+
+      final reservada = await repo.reservar(guardada, 'a9');
+
+      expect(reservada.estado, EstadoDonacion.reservada);
+      expect(reservada.asociacionId, 'a9');
+      expect(reservada.reservadaEn, isNotNull);
+      final cambios = verify(firestore.actualizarDocumento(
+        'donaciones',
+        'd1',
+        captureAny,
+      )).captured.single as Map<String, dynamic>;
+      expect(cambios['estado'], 'reservada');
+      expect(cambios['asociacionId'], 'a9');
+      expect(cambios['reservadaEn'], isA<String>());
+    });
+
+    test('rechaza una donacion que ya no esta disponible', () async {
+      final yaReservada = guardada.copyWith(
+        estado: EstadoDonacion.reservada,
+        asociacionId: 'otra',
+      );
+
+      await expectLater(
+        repo.reservar(yaReservada, 'a9'),
+        throwsA(isA<DonacionNoDisponible>()),
+      );
+      verifyNever(firestore.actualizarDocumento(any, any, any));
+    });
+
+    test('propaga el error si Firestore falla', () async {
+      when(firestore.actualizarDocumento(any, any, any))
+          .thenAnswer((_) => Future.error(Exception('sin conexion')));
+
+      await expectLater(
+        repo.reservar(guardada, 'a9'),
+        throwsA(isA<Exception>()),
+      );
+    });
+  });
 }

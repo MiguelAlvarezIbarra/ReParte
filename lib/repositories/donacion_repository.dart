@@ -3,6 +3,17 @@ import '../models/donacion.dart';
 import '../models/punto_entrega.dart';
 import '../services/firestore_service.dart';
 
+/// La donacion ya no se puede reservar: otra asociacion la tomo,
+/// el donante la cancelo o ya caduco.
+class DonacionNoDisponible implements Exception {
+  const DonacionNoDisponible();
+
+  String get mensaje => 'Esta donación ya no está disponible';
+
+  @override
+  String toString() => mensaje;
+}
+
 /// Fuente unica de verdad de las donaciones.
 /// Los ViewModels solo hablan con esta clase, nunca con Firebase.
 class DonacionRepository {
@@ -24,6 +35,28 @@ class DonacionRepository {
               for (final doc in docs)
                 if (_aDonacion(doc) case final donacion?) donacion,
             ]);
+  }
+
+  /// Reserva [donacion] para [asociacionId] y devuelve la donacion reservada.
+  /// Lanza [DonacionNoDisponible] si ya no esta disponible.
+  // TODO(T20): hacerlo en una transaccion para evitar la doble reserva.
+  Future<Donacion> reservar(Donacion donacion, String asociacionId) async {
+    if (!donacion.estaDisponible) throw const DonacionNoDisponible();
+    final reservada = donacion.copyWith(
+      estado: EstadoDonacion.reservada,
+      asociacionId: asociacionId,
+      reservadaEn: DateTime.now(),
+    );
+    await _firestore.actualizarDocumento(
+      Colecciones.donaciones,
+      donacion.id,
+      {
+        'estado': reservada.estado.name,
+        'asociacionId': asociacionId,
+        'reservadaEn': reservada.reservadaEn!.toIso8601String(),
+      },
+    );
+    return reservada;
   }
 
   /// Lugar de entrega de una donacion; null si ya no existe.

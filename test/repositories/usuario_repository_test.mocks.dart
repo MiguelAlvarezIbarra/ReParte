@@ -136,6 +136,25 @@ class MockFirestoreService extends _i1.Mock implements _i5.FirestoreService {
       ) as _i3.Future<void>);
 
   @override
+  _i3.Future<void> actualizarDocumento(
+    String? coleccion,
+    String? id,
+    Map<String, dynamic>? cambios,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #actualizarDocumento,
+          [
+            coleccion,
+            id,
+            cambios,
+          ],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
   _i3.Future<String> agregarDocumento(
     String? coleccion,
     Map<String, dynamic>? datos,

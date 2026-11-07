@@ -73,4 +73,49 @@ void main() {
       leida.copyWith(estado: EstadoDonacion.cancelada).toMap(),
     );
   });
+
+  // Criterio de T19: al reservar, la donacion cambia de estado y deja de
+  // aparecer como disponible.
+  testWidgets('una asociacion reserva y la donacion deja de estar disponible',
+      (_) async {
+    final puntoId = await repo.crearPuntoEntrega(PuntoEntrega(
+      id: '',
+      donanteId: donanteId,
+      nombre: 'Punto de prueba',
+      direccion: 'Av. Universidad 210',
+      latitud: 0,
+      longitud: 0,
+    ));
+    final id = await repo.crear(Donacion(
+      id: '',
+      donanteId: donanteId,
+      descripcion: '[prueba automatica] reserva',
+      cantidadKg: 1.5,
+      caducidad: DateTime.now().add(const Duration(days: 1)),
+      puntoEntregaId: puntoId,
+      creadaEn: DateTime.now(),
+    ));
+    final publicada = (await repo
+            .observarDisponibles()
+            .firstWhere((lista) => lista.any((d) => d.id == id)))
+        .firstWhere((d) => d.id == id);
+
+    // La asociacion de prueba es la que reserva.
+    await auth.cerrarSesion();
+    final asociacionId = await auth.iniciarSesion(
+      'prueba.asociacion@reparte.mx',
+      'reparte123',
+    );
+    final reservada = await repo.reservar(publicada, asociacionId);
+
+    expect(reservada.estado, EstadoDonacion.reservada);
+    final disponibles = await repo
+        .observarDisponibles()
+        .firstWhere((lista) => lista.every((d) => d.id != id));
+    expect(disponibles.map((d) => d.id), isNot(contains(id)));
+    final enFirestore =
+        await firestore.leerDocumento(Colecciones.donaciones, id);
+    expect(enFirestore?['estado'], 'reservada');
+    expect(enFirestore?['asociacionId'], asociacionId);
+  });
 }

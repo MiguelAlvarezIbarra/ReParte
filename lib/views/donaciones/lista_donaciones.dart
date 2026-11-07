@@ -11,21 +11,26 @@ import 'detalle_donacion_view.dart';
 /// Lista de donaciones disponibles que se actualiza sola en tiempo real.
 /// Se puede poner dentro de cualquier pantalla; trae su propio ViewModel.
 /// Necesita un DonacionRepository arriba en el arbol de Provider.
+/// Con [asociacionId], el detalle que se abre permite reservar.
 class ListaDonaciones extends StatelessWidget {
-  const ListaDonaciones({super.key});
+  const ListaDonaciones({super.key, this.asociacionId});
+
+  final String? asociacionId;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) =>
           DonacionesViewModel(context.read<DonacionRepository>())..escuchar(),
-      child: const _Contenido(),
+      child: _Contenido(asociacionId: asociacionId),
     );
   }
 }
 
 class _Contenido extends StatelessWidget {
-  const _Contenido();
+  const _Contenido({this.asociacionId});
+
+  final String? asociacionId;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +62,11 @@ class _Contenido extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, i) => TarjetaDonacion(
             donacion: vm.donaciones[i],
-            alTocar: () => DetalleDonacionView.abrir(context, vm.donaciones[i]),
+            alTocar: () => DetalleDonacionView.abrir(
+              context,
+              vm.donaciones[i],
+              asociacionId: asociacionId,
+            ),
           ),
         );
     }

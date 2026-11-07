@@ -15,6 +15,9 @@ class Donacion {
   /// Asociacion que reservo la donacion; null mientras esta disponible.
   final String? asociacionId;
 
+  /// Momento en que se reservo; null mientras esta disponible.
+  final DateTime? reservadaEn;
+
   const Donacion({
     required this.id,
     required this.donanteId,
@@ -25,6 +28,7 @@ class Donacion {
     required this.creadaEn,
     this.estado = EstadoDonacion.disponible,
     this.asociacionId,
+    this.reservadaEn,
   });
 
   bool get estaVigente => caducidad.isAfter(DateTime.now());
@@ -55,7 +59,11 @@ class Donacion {
   }
 
   /// Copia con cambios, util para reservar o marcar como entregada.
-  Donacion copyWith({EstadoDonacion? estado, String? asociacionId}) {
+  Donacion copyWith({
+    EstadoDonacion? estado,
+    String? asociacionId,
+    DateTime? reservadaEn,
+  }) {
     return Donacion(
       id: id,
       donanteId: donanteId,
@@ -66,6 +74,7 @@ class Donacion {
       creadaEn: creadaEn,
       estado: estado ?? this.estado,
       asociacionId: asociacionId ?? this.asociacionId,
+      reservadaEn: reservadaEn ?? this.reservadaEn,
     );
   }
 
@@ -83,6 +92,10 @@ class Donacion {
         orElse: () => EstadoDonacion.disponible,
       ),
       asociacionId: map['asociacionId'] as String?,
+      reservadaEn: switch (map['reservadaEn']) {
+        final String fecha => DateTime.parse(fecha),
+        _ => null,
+      },
     );
   }
 
@@ -95,5 +108,6 @@ class Donacion {
         'creadaEn': creadaEn.toIso8601String(),
         'estado': estado.name,
         'asociacionId': asociacionId,
+        'reservadaEn': reservadaEn?.toIso8601String(),
       };
 }
