@@ -254,7 +254,7 @@ void main() {
     });
   });
 
-  group('reservar (T19)', () {
+  group('reservar (T19 y T20)', () {
     final guardada = Donacion(
       id: 'd1',
       donanteId: 'u1',
@@ -265,26 +265,38 @@ void main() {
       creadaEn: DateTime(2026, 11, 7),
     );
 
+    /// Simula la transaccion: entrega [enServidor] a la funcion del
+    /// repositorio y guarda lo que decidio escribir.
+    Map<String, dynamic>? escrito;
+    void servidorCon(Map<String, dynamic>? enServidor) {
+      escrito = null;
+      when(firestore.actualizarEnTransaccion(any, any, any))
+          .thenAnswer((invocacion) async {
+        final cambiar = invocacion.positionalArguments[2]
+            as Map<String, dynamic>? Function(Map<String, dynamic>?);
+        final cambios = cambiar(enServidor);
+        if (cambios == null) throw const CambioRechazado();
+        escrito = cambios;
+      });
+    }
+
     test('cambia el estado a reservada con la asociacion y la fecha', () async {
-      when(firestore.actualizarDocumento(any, any, any))
-          .thenAnswer((_) async {});
+      servidorCon(guardada.toMap());
 
       final reservada = await repo.reservar(guardada, 'a9');
 
       expect(reservada.estado, EstadoDonacion.reservada);
       expect(reservada.asociacionId, 'a9');
       expect(reservada.reservadaEn, isNotNull);
-      final cambios = verify(firestore.actualizarDocumento(
-        'donaciones',
-        'd1',
-        captureAny,
-      )).captured.single as Map<String, dynamic>;
-      expect(cambios['estado'], 'reservada');
-      expect(cambios['asociacionId'], 'a9');
-      expect(cambios['reservadaEn'], isA<String>());
+      verify(firestore.actualizarEnTransaccion('donaciones', 'd1', any))
+          .called(1);
+      expect(escrito?['estado'], 'reservada');
+      expect(escrito?['asociacionId'], 'a9');
+      expect(escrito?['reservadaEn'], isA<String>());
     });
 
-    test('rechaza una donacion que ya no esta disponible', () async {
+    test('rechaza sin ir al servidor si ya se sabe que no esta disponible',
+        () async {
       final yaReservada = guardada.copyWith(
         estado: EstadoDonacion.reservada,
         asociacionId: 'otra',
@@ -294,17 +306,112 @@ void main() {
         repo.reservar(yaReservada, 'a9'),
         throwsA(isA<DonacionNoDisponible>()),
       );
-      verifyNever(firestore.actualizarDocumento(any, any, any));
+      verifyNever(firestore.actualizarEnTransaccion(any, any, any));
+    });
+
+    test('si otra asociacion la reservo antes, avisa y no escribe (T20)',
+        () async {
+      // En este telefono aun se ve disponible, pero en el servidor ya no.
+      servidorCon(guardada
+          .copyWith(estado: EstadoDonacion.reservada, asociacionId: 'otra')
+          .toMap());
+
+      await expectLater(
+        repo.reservar(guardada, 'a9'),
+        throwsA(isA<DonacionNoDisponible>()),
+      );
+      expect(escrito, isNull);
+    });
+
+    test('si la donacion ya no existe en el servidor, avisa (T20)', () async {
+      servidorCon(null);
+
+      await expectLater(
+        repo.reservar(guardada, 'a9'),
+        throwsA(isA<DonacionNoDisponible>()),
+      );
+    });
+
+    test('cambiosParaReservar solo acepta una donacion disponible y libre', () {
+      final reservada = guardada.copyWith(
+        estado: EstadoDonacion.reservada,
+        asociacionId: 'a9',
+        reservadaEn: DateTime(2026, 11, 7, 18),
+      );
+
+      expect(
+        DonacionRepository.cambiosParaReservar(guardada.toMap(), reservada),
+        isNotNull,
+      );
+      expect(
+        DonacionRepository.cambiosParaReservar(
+          {...guardada.toMap(), 'estado': 'cancelada'},
+          reservada,
+        ),
+        isNull,
+      );
+      expect(
+        DonacionRepository.cambiosParaReservar(
+          {...guardada.toMap(), 'asociacionId': 'otra'},
+          reservada,
+        ),
+        isNull,
+      );
     });
 
     test('propaga el error si Firestore falla', () async {
-      when(firestore.actualizarDocumento(any, any, any))
+      when(firestore.actualizarEnTransaccion(any, any, any))
           .thenAnswer((_) => Future.error(Exception('sin conexion')));
 
       await expectLater(
         repo.reservar(guardada, 'a9'),
         throwsA(isA<Exception>()),
       );
+    });
+  });
+
+  group('marcarEntregada (T23)', () {
+    final reservada = Donacion(
+      id: 'd1',
+      donanteId: 'u1',
+      descripcion: 'Pan del dia',
+      cantidadKg: 3,
+      caducidad: DateTime.now().add(const Duration(days: 1)),
+      puntoEntregaId: 'p1',
+      creadaEn: DateTime(2026, 11, 7),
+      estado: EstadoDonacion.reservada,
+      asociacionId: 'a9',
+    );
+
+    test('cierra la donacion con estado entregada y la fecha', () async {
+      when(firestore.actualizarDocumento(any, any, any))
+          .thenAnswer((_) async {});
+
+      final entregada = await repo.marcarEntregada(reservada);
+
+      expect(entregada.estado, EstadoDonacion.entregada);
+      expect(entregada.entregadaEn, isNotNull);
+      expect(entregada.estaCerrada, isTrue);
+      final cambios = verify(firestore.actualizarDocumento(
+        'donaciones',
+        'd1',
+        captureAny,
+      )).captured.single as Map<String, dynamic>;
+      expect(cambios['estado'], 'entregada');
+      expect(cambios['entregadaEn'], isA<String>());
+    });
+
+    test('solo se puede entregar una donacion reservada', () async {
+      final disponible = reservada.copyWith(estado: EstadoDonacion.disponible);
+      final yaEntregada = reservada.copyWith(estado: EstadoDonacion.entregada);
+
+      for (final d in [disponible, yaEntregada]) {
+        await expectLater(
+          repo.marcarEntregada(d),
+          throwsA(isA<DonacionNoEntregable>()),
+        );
+      }
+      verifyNever(firestore.actualizarDocumento(any, any, any));
     });
   });
 }

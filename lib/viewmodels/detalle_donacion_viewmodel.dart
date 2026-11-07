@@ -17,13 +17,18 @@ class DetalleDonacionViewModel extends ChangeNotifier {
     required DonacionRepository donaciones,
     required UsuarioRepository usuarios,
     this.asociacionId,
-  })  : _donaciones = donaciones,
+    String? usuarioId,
+  })  : usuarioId = usuarioId ?? asociacionId,
+        _donaciones = donaciones,
         _usuarios = usuarios;
 
   Donacion donacion;
 
   /// Asociacion que mira el detalle; null si lo abre otro rol.
   final String? asociacionId;
+
+  /// Quien mira el detalle (donante o asociacion); null si no se sabe.
+  final String? usuarioId;
   final DonacionRepository _donaciones;
   final UsuarioRepository _usuarios;
 
@@ -43,6 +48,38 @@ class DetalleDonacionViewModel extends ChangeNotifier {
       asociacionId != null &&
       donacion.estado == EstadoDonacion.reservada &&
       donacion.asociacionId == asociacionId;
+
+  bool entregando = false;
+  String? errorEntrega;
+
+  /// El donante o la asociacion que la reservo pueden cerrarla al entregarla.
+  bool get puedeEntregar =>
+      usuarioId != null &&
+      donacion.estado == EstadoDonacion.reservada &&
+      (usuarioId == donacion.donanteId || usuarioId == donacion.asociacionId) &&
+      !entregando;
+
+  /// Marca la donacion como entregada. Devuelve true si lo logro.
+  Future<bool> marcarEntregada() async {
+    if (!puedeEntregar) return false;
+    entregando = true;
+    errorEntrega = null;
+    notifyListeners();
+    try {
+      donacion = await _donaciones.marcarEntregada(donacion);
+      return true;
+    } on DonacionNoEntregable catch (e) {
+      errorEntrega = e.mensaje;
+      return false;
+    } catch (_) {
+      errorEntrega = 'No se pudo marcar como entregada. Revisa tu conexión '
+          'e intenta de nuevo.';
+      return false;
+    } finally {
+      entregando = false;
+      if (!_cerrado) notifyListeners();
+    }
+  }
 
   bool get cargando =>
       estado == EstadoUI.inicial || estado == EstadoUI.cargando;

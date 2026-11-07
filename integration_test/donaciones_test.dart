@@ -117,5 +117,22 @@ void main() {
         await firestore.leerDocumento(Colecciones.donaciones, id);
     expect(enFirestore?['estado'], 'reservada');
     expect(enFirestore?['asociacionId'], asociacionId);
+
+    // Criterio de T20: otro intento con la donacion vista como disponible
+    // (como otra asociacion que llego tarde) es rechazado.
+    await expectLater(
+      repo.reservar(publicada, 'otra-asociacion'),
+      throwsA(isA<DonacionNoDisponible>()),
+    );
+    final sigueSiendoDeLaPrimera =
+        await firestore.leerDocumento(Colecciones.donaciones, id);
+    expect(sigueSiendoDeLaPrimera?['asociacionId'], asociacionId);
+
+    // Criterio de T23: al entregarla queda cerrada con su fecha.
+    final entregada = await repo.marcarEntregada(reservada);
+    expect(entregada.estado, EstadoDonacion.entregada);
+    final cerrada = await firestore.leerDocumento(Colecciones.donaciones, id);
+    expect(cerrada?['estado'], 'entregada');
+    expect(cerrada?['entregadaEn'], isA<String>());
   });
 }

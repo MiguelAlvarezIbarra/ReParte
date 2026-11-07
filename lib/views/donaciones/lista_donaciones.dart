@@ -6,7 +6,7 @@ import '../../repositories/donacion_repository.dart';
 import '../../viewmodels/donaciones_viewmodel.dart';
 import '../../viewmodels/estado_ui.dart';
 import '../../widgets/estado_vacio.dart';
-import '../../widgets/mensaje_error.dart';
+import '../../widgets/estado_error.dart';
 import '../../widgets/tarjeta_donacion.dart';
 import 'detalle_donacion_view.dart';
 
@@ -50,12 +50,9 @@ class _Contenido extends StatelessWidget {
       case EstadoUI.cargando:
         return const Center(child: CircularProgressIndicator());
       case EstadoUI.error:
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: MensajeError(vm.mensajeError ?? 'Ocurrió un error'),
-          ),
+        return EstadoError(
+          mensaje: vm.mensajeError ?? 'Ocurrió un error',
+          alReintentar: vm.escuchar,
         );
       case EstadoUI.listo:
         if (vm.donaciones.isEmpty && !vm.sinResultados) {
