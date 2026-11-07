@@ -30,12 +30,14 @@ service cloud.firestore {
 
     // El donante publica a su nombre; cualquier usuario autenticado
     // puede actualizarla para reservarla o marcarla como entregada.
+    // Una donacion entregada o cancelada queda cerrada: ya no cambia (T23).
     // TODO(T20): restringir la actualizacion para evitar la doble reserva.
     match /donaciones/{id} {
       allow read: if autenticado();
       allow create: if esDueno(request.resource.data.donanteId);
       allow update: if autenticado()
-        && request.resource.data.donanteId == resource.data.donanteId;
+        && request.resource.data.donanteId == resource.data.donanteId
+        && !(resource.data.estado in ['entregada', 'cancelada']);
       allow delete: if esDueno(resource.data.donanteId);
     }
 

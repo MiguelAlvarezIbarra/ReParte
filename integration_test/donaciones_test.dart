@@ -117,5 +117,12 @@ void main() {
         await firestore.leerDocumento(Colecciones.donaciones, id);
     expect(enFirestore?['estado'], 'reservada');
     expect(enFirestore?['asociacionId'], asociacionId);
+
+    // Criterio de T23: al entregarla queda cerrada con su fecha.
+    final entregada = await repo.marcarEntregada(reservada);
+    expect(entregada.estado, EstadoDonacion.entregada);
+    final cerrada = await firestore.leerDocumento(Colecciones.donaciones, id);
+    expect(cerrada?['estado'], 'entregada');
+    expect(cerrada?['entregadaEn'], isA<String>());
   });
 }

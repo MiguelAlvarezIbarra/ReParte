@@ -69,6 +69,21 @@ class DonacionRepositoryFalso extends DonacionRepository {
     return reservada;
   }
 
+  /// Donaciones cerradas con [marcarEntregada] y como falla, si se indica.
+  final entregadas = <Donacion>[];
+  Object? errorAlEntregar;
+
+  @override
+  Future<Donacion> marcarEntregada(Donacion donacion) async {
+    if (errorAlEntregar case final error?) throw error;
+    final entregada = donacion.copyWith(
+      estado: EstadoDonacion.entregada,
+      entregadaEn: DateTime(2026, 11, 8, 19),
+    );
+    entregadas.add(entregada);
+    return entregada;
+  }
+
   @override
   Future<String> crear(Donacion donacion) async {
     donacion.validar();
