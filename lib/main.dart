@@ -25,7 +25,13 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Una sola instancia de cada servicio, inyectada hacia arriba.
+  runApp(crearApp());
+}
+
+/// Arma la app con sus servicios reales, una sola instancia de cada uno.
+/// La prueba de punta a punta (T25) puede cambiar el servicio de avisos
+/// para comprobar que se mostro la notificacion.
+Widget crearApp({NotificacionesService? notificaciones}) {
   final firestore = FirestoreService();
   final usuarioRepository = UsuarioRepository(
     auth: AuthService(),
@@ -34,23 +40,21 @@ Future<void> main() async {
   final donacionRepository = DonacionRepository(firestore: firestore);
   const ubicacionService = GeolocatorUbicacionService();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => LoginViewModel(usuarioRepository),
-        ),
-        Provider<UsuarioRepository>.value(value: usuarioRepository),
-        Provider<DonacionRepository>.value(value: donacionRepository),
-        Provider<UbicacionService>.value(value: ubicacionService),
-        Provider<NavegacionService>.value(value: const NavegacionService()),
-        Provider<RutasService>.value(value: OsrmRutasService()),
-        Provider<NotificacionesService>.value(
-          value: LocalNotificacionesService(),
-        ),
-      ],
-      child: ReParteApp(conectividad: ConnectivityPlusService()),
-    ),
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider(
+        create: (_) => LoginViewModel(usuarioRepository),
+      ),
+      Provider<UsuarioRepository>.value(value: usuarioRepository),
+      Provider<DonacionRepository>.value(value: donacionRepository),
+      Provider<UbicacionService>.value(value: ubicacionService),
+      Provider<NavegacionService>.value(value: const NavegacionService()),
+      Provider<RutasService>.value(value: OsrmRutasService()),
+      Provider<NotificacionesService>.value(
+        value: notificaciones ?? LocalNotificacionesService(),
+      ),
+    ],
+    child: ReParteApp(conectividad: ConnectivityPlusService()),
   );
 }
 
