@@ -66,7 +66,10 @@ class DonacionRepository {
 
   /// Reserva [donacion] para [asociacionId] y devuelve la donacion reservada.
   /// Lanza [DonacionNoDisponible] si ya no esta disponible.
-  // TODO(T20): hacerlo en una transaccion para evitar la doble reserva.
+  ///
+  /// Se hace en una transaccion (T20): el estado se vuelve a leer en el
+  /// servidor justo antes de escribir, asi que si dos asociaciones reservan
+  /// al mismo tiempo solo una lo logra y la otra recibe el aviso.
   Future<Donacion> reservar(Donacion donacion, String asociacionId) async {
     if (!donacion.estaDisponible) throw const DonacionNoDisponible();
     final reservada = donacion.copyWith(
@@ -74,16 +77,32 @@ class DonacionRepository {
       asociacionId: asociacionId,
       reservadaEn: DateTime.now(),
     );
-    await _firestore.actualizarDocumento(
-      Colecciones.donaciones,
-      donacion.id,
-      {
-        'estado': reservada.estado.name,
-        'asociacionId': asociacionId,
-        'reservadaEn': reservada.reservadaEn!.toIso8601String(),
-      },
-    );
+    try {
+      await _firestore.actualizarEnTransaccion(
+        Colecciones.donaciones,
+        donacion.id,
+        (actual) => cambiosParaReservar(actual, reservada),
+      );
+    } on CambioRechazado {
+      throw const DonacionNoDisponible();
+    }
     return reservada;
+  }
+
+  /// Campos a escribir para reservar, o null si en el servidor ya no esta
+  /// disponible (otra asociacion la tomo, se cancelo o se borro).
+  static Map<String, dynamic>? cambiosParaReservar(
+    Map<String, dynamic>? actual,
+    Donacion reservada,
+  ) {
+    if (actual == null) return null;
+    if (actual['estado'] != EstadoDonacion.disponible.name) return null;
+    if (actual['asociacionId'] != null) return null;
+    return {
+      'estado': reservada.estado.name,
+      'asociacionId': reservada.asociacionId,
+      'reservadaEn': reservada.reservadaEn!.toIso8601String(),
+    };
   }
 
   /// Cierra la donacion como entregada con la fecha de hoy y la devuelve.

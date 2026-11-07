@@ -28,16 +28,39 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // El donante publica a su nombre; cualquier usuario autenticado
-    // puede actualizarla para reservarla o marcarla como entregada.
+    // Ciclo de una donacion:
+    //   disponible -> reservada  solo si sigue disponible y a nombre de quien
+    //                            reserva (evita la doble reserva, T20)
+    //   reservada  -> entregada  solo el donante o la asociacion que la reservo
+    //   el donante puede editar o cancelar la suya mientras no este cerrada.
     // Una donacion entregada o cancelada queda cerrada: ya no cambia (T23).
-    // TODO(T20): restringir la actualizacion para evitar la doble reserva.
+    function cerrada() {
+      return resource.data.estado in ['entregada', 'cancelada'];
+    }
+
+    function reservaValida() {
+      return resource.data.estado == 'disponible'
+        && resource.data.get('asociacionId', null) == null
+        && request.resource.data.estado == 'reservada'
+        && request.resource.data.asociacionId == request.auth.uid;
+    }
+
+    function entregaValida() {
+      return resource.data.estado == 'reservada'
+        && request.resource.data.estado == 'entregada'
+        && request.resource.data.asociacionId == resource.data.asociacionId
+        && (request.auth.uid == resource.data.donanteId
+            || request.auth.uid == resource.data.asociacionId);
+    }
+
     match /donaciones/{id} {
       allow read: if autenticado();
       allow create: if esDueno(request.resource.data.donanteId);
       allow update: if autenticado()
         && request.resource.data.donanteId == resource.data.donanteId
-        && !(resource.data.estado in ['entregada', 'cancelada']);
+        && !cerrada()
+        && (reservaValida() || entregaValida()
+            || request.auth.uid == resource.data.donanteId);
       allow delete: if esDueno(resource.data.donanteId);
     }
 

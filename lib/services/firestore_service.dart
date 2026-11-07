@@ -3,6 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Un documento leido de Firestore: su id y sus datos.
 typedef Documento = ({String id, Map<String, dynamic> datos});
 
+/// La transaccion se cancelo porque el documento ya no cumplia la condicion.
+class CambioRechazado implements Exception {
+  const CambioRechazado();
+}
+
 /// Acceso generico a la base de datos en la nube.
 /// Es la unica capa que conoce el SDK de Firestore.
 class FirestoreService {
@@ -39,6 +44,24 @@ class FirestoreService {
     Map<String, dynamic> cambios,
   ) {
     return _db.collection(coleccion).doc(id).update(cambios);
+  }
+
+  /// Lee el documento y lo cambia en una sola transaccion: si alguien lo
+  /// modifica en medio, Firestore la repite con los datos nuevos.
+  /// [cambios] recibe los datos actuales (null si no existe) y devuelve los
+  /// campos a escribir, o null para cancelar; entonces lanza [CambioRechazado].
+  Future<void> actualizarEnTransaccion(
+    String coleccion,
+    String id,
+    Map<String, dynamic>? Function(Map<String, dynamic>? actual) cambios,
+  ) {
+    final ref = _db.collection(coleccion).doc(id);
+    return _db.runTransaction((tx) async {
+      final actual = await tx.get(ref);
+      final nuevos = cambios(actual.data());
+      if (nuevos == null) throw const CambioRechazado();
+      tx.update(ref, nuevos);
+    });
   }
 
   /// Crea un documento con id automatico y devuelve ese id.
