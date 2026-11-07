@@ -32,6 +32,15 @@ class FirestoreService {
     return _db.collection(coleccion).doc(id).set(datos);
   }
 
+  /// Cambia solo los campos indicados de un documento que ya existe.
+  Future<void> actualizarDocumento(
+    String coleccion,
+    String id,
+    Map<String, dynamic> cambios,
+  ) {
+    return _db.collection(coleccion).doc(id).update(cambios);
+  }
+
   /// Crea un documento con id automatico y devuelve ese id.
   Future<String> agregarDocumento(
     String coleccion,

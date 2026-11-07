@@ -25,6 +25,10 @@ class DonacionRepositoryFalso extends DonacionRepository {
   /// Si es true, publicar falla como si no hubiera conexion.
   bool crearFalla = false;
 
+  /// Donaciones reservadas con [reservar] y como falla, si se indica.
+  final reservadas = <Donacion>[];
+  Object? errorAlReservar;
+
   void emitir(List<Donacion> donaciones) => controlador.add(donaciones);
 
   @override
@@ -33,6 +37,18 @@ class DonacionRepositoryFalso extends DonacionRepository {
     if (crearFalla) throw Exception('sin conexion');
     puntosCreados.add(punto);
     return 'p${puntosCreados.length}';
+  }
+
+  @override
+  Future<Donacion> reservar(Donacion donacion, String asociacionId) async {
+    if (errorAlReservar case final error?) throw error;
+    final reservada = donacion.copyWith(
+      estado: EstadoDonacion.reservada,
+      asociacionId: asociacionId,
+      reservadaEn: DateTime(2026, 11, 7, 18),
+    );
+    reservadas.add(reservada);
+    return reservada;
   }
 
   @override

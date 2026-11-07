@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:reparte/models/donacion.dart';
 import 'package:reparte/repositories/donacion_repository.dart';
 import 'package:reparte/viewmodels/detalle_donacion_viewmodel.dart';
 import 'package:reparte/viewmodels/estado_ui.dart';
@@ -112,5 +113,67 @@ void main() {
 
     await carga;
     expect(vm.estado, EstadoUI.listo);
+  });
+
+  group('reservar (T19)', () {
+    DetalleDonacionViewModel deAsociacion() => DetalleDonacionViewModel(
+          donacion: donacionDePrueba('a'),
+          donaciones: donaciones,
+          usuarios: usuarios,
+          asociacionId: 'as1',
+        );
+
+    test('sin asociacion no se puede reservar', () async {
+      final vm = crear();
+
+      expect(vm.puedeReservar, isFalse);
+      expect(await vm.reservar(), isFalse);
+      expect(donaciones.reservadas, isEmpty);
+    });
+
+    test('una asociacion reserva y queda reservada por ella', () async {
+      final vm = deAsociacion();
+      expect(vm.puedeReservar, isTrue);
+
+      final ok = await vm.reservar();
+
+      expect(ok, isTrue);
+      expect(vm.donacion.estado, EstadoDonacion.reservada);
+      expect(vm.reservadaPorMi, isTrue);
+      expect(vm.puedeReservar, isFalse);
+      expect(donaciones.reservadas.single.asociacionId, 'as1');
+    });
+
+    test('pasa por reservando mientras guarda', () async {
+      final vm = deAsociacion();
+      final estados = <bool>[];
+      vm.addListener(() => estados.add(vm.reservando));
+
+      await vm.reservar();
+
+      expect(estados, [true, false]);
+    });
+
+    test('si otra la tomo antes avisa que ya no esta disponible', () async {
+      donaciones.errorAlReservar = const DonacionNoDisponible();
+      final vm = deAsociacion();
+
+      final ok = await vm.reservar();
+
+      expect(ok, isFalse);
+      expect(vm.errorReserva, 'Esta donación ya no está disponible');
+      expect(vm.reservadaPorMi, isFalse);
+    });
+
+    test('si falla la conexion muestra un mensaje y permite reintentar',
+        () async {
+      donaciones.errorAlReservar = Exception('sin conexion');
+      final vm = deAsociacion();
+
+      await vm.reservar();
+
+      expect(vm.errorReserva, contains('No se pudo reservar'));
+      expect(vm.puedeReservar, isTrue);
+    });
   });
 }
