@@ -5,6 +5,7 @@ import '../../models/donacion.dart';
 import '../../models/punto_entrega.dart';
 import '../../models/usuario.dart';
 import '../../widgets/boton_como_llegar.dart';
+import '../../widgets/boton_ver_ruta.dart';
 
 /// Festejo al reservar: cuanta comida se rescato y donde recogerla.
 /// El punto y el donante pueden faltar si no se alcanzaron a cargar.
@@ -108,7 +109,9 @@ class ReservaConfirmadaView extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               if (punto != null && BotonComoLlegar.tieneUbicacion(punto)) ...[
-                BotonComoLlegar(punto: punto, relleno: true),
+                BotonVerRuta(punto: punto),
+                const SizedBox(height: 12),
+                BotonComoLlegar(punto: punto),
                 const SizedBox(height: 12),
               ],
               OutlinedButton(
