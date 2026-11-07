@@ -6,9 +6,16 @@ class Formato {
   static String fecha(DateTime f) =>
       '${f.day.toString().padLeft(2, '0')}/${f.month.toString().padLeft(2, '0')}/${f.year}';
 
+  /// True si [f] cae en el dia de hoy.
+  static bool esHoy(DateTime f, {DateTime? ahora}) {
+    final hoy = ahora ?? DateTime.now();
+    return f.year == hoy.year && f.month == hoy.month && f.day == hoy.day;
+  }
+
   /// "3 kg" si es entero, "2.5 kg" si trae decimales.
   static String kilos(double kg) {
-    final texto = kg == kg.roundToDouble() ? kg.toInt().toString() : kg.toString();
+    final texto =
+        kg == kg.roundToDouble() ? kg.toInt().toString() : kg.toString();
     return '$texto kg';
   }
 

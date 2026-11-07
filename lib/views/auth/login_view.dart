@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/tema/tema_app.dart';
 import '../../core/utilidades/validadores.dart';
 import '../../viewmodels/login_viewmodel.dart';
 import '../../widgets/encabezado_reparte.dart';
@@ -55,7 +56,9 @@ class _LoginViewState extends State<LoginView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const EncabezadoReParte(),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 28),
+                  const _Presentacion(),
+                  const SizedBox(height: 28),
                   TextFormField(
                     controller: _correo,
                     keyboardType: TextInputType.emailAddress,
@@ -105,16 +108,65 @@ class _LoginViewState extends State<LoginView> {
                           )
                         : const Text('Entrar'),
                   ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: vm.cargando ? null : _irARegistro,
-                    child: const Text('Crear cuenta'),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        '¿Aún no tienes cuenta?',
+                        style: TextStyle(color: TemaApp.gris),
+                      ),
+                      TextButton(
+                        onPressed: vm.cargando ? null : _irARegistro,
+                        child: const Text('Crear cuenta'),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Tarjeta verde que explica en una linea para que sirve la app.
+class _Presentacion extends StatelessWidget {
+  const _Presentacion();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: TemaApp.verde,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: TemaApp.lima,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.volunteer_activism_outlined,
+              color: TemaApp.verdeOscuro,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Text(
+              'Restaurantes y asociaciones conectados para que la comida '
+              'llegue a quien la necesita.',
+              style: TextStyle(color: TemaApp.crema, height: 1.4),
+            ),
+          ),
+        ],
       ),
     );
   }

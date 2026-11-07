@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/tema/tema_app.dart';
 
 /// Mensaje centrado con icono para listas que aun no tienen datos.
 class EstadoVacio extends StatelessWidget {
@@ -22,13 +23,21 @@ class EstadoVacio extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icono, size: 64, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 16),
+            Container(
+              width: 112,
+              height: 112,
+              decoration: const BoxDecoration(
+                color: TemaApp.verdeClaro,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icono, size: 52, color: TemaApp.verde),
+            ),
+            const SizedBox(height: 20),
             Text(titulo, style: texto.titleMedium, textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(
               mensaje,
-              style: texto.bodyMedium?.copyWith(color: Colors.black54),
+              style: texto.bodyMedium?.copyWith(color: TemaApp.gris),
               textAlign: TextAlign.center,
             ),
           ],

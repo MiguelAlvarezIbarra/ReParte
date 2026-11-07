@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/tema/tema_app.dart';
 import '../../core/utilidades/formato.dart';
 import '../../models/donacion.dart';
 import '../../repositories/donacion_repository.dart';
 import '../../repositories/usuario_repository.dart';
 import '../../viewmodels/detalle_donacion_viewmodel.dart';
+import '../../widgets/etiqueta.dart';
+import '../../widgets/boton_como_llegar.dart';
+import '../../widgets/ilustracion_alimento.dart';
 import '../../widgets/mensaje_error.dart';
+import 'reserva_confirmada_view.dart';
 
 /// Todos los datos de una donacion: la comida, quien la dona y donde se recoge.
 class DetalleDonacionView extends StatelessWidget {
@@ -42,109 +47,140 @@ class DetalleDonacionView extends StatelessWidget {
     final donacion = vm.donacion;
     final donante = vm.donante;
     final punto = vm.punto;
+    final texto = Theme.of(context).textTheme;
+    final estilo = IlustracionAlimento.estilo(donacion.descripcion);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalle de la donación')),
+      appBar: AppBar(
+        title: const Text('Detalle de la donación'),
+        backgroundColor: estilo.fondo,
+      ),
       bottomNavigationBar:
           vm.asociacionId == null ? null : const _PanelReserva(),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Seccion(
-                titulo: 'Donación',
-                hijos: [
-                  Text(
-                    donacion.descripcion,
-                    style: Theme.of(context).textTheme.titleLarge,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 180,
+              color: estilo.fondo,
+              child: Icon(estilo.icono, size: 104, color: estilo.trazo),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          donacion.descripcion,
+                          style: texto.headlineSmall,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        Formato.kilos(donacion.cantidadKg),
+                        style: texto.headlineSmall?.copyWith(
+                          color: TemaApp.verde,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  _Dato(
-                    icono: Icons.scale_outlined,
-                    etiqueta: 'Cantidad',
-                    valor: Formato.kilos(donacion.cantidadKg),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Etiqueta(
+                        Formato.estado(donacion.estado),
+                        icono: Icons.info_outline,
+                      ),
+                      if (Formato.esHoy(donacion.caducidad))
+                        const Etiqueta.destacada('Caduca hoy')
+                      else
+                        Etiqueta(
+                          'Caduca el ${Formato.fecha(donacion.caducidad)}',
+                          icono: Icons.event_outlined,
+                        ),
+                    ],
                   ),
-                  _Dato(
-                    icono: Icons.event_outlined,
-                    etiqueta: 'Caduca',
-                    valor: Formato.fecha(donacion.caducidad),
-                  ),
-                  _Dato(
-                    icono: Icons.info_outline,
-                    etiqueta: 'Estado',
-                    valor: Formato.estado(donacion.estado),
-                  ),
+                  const SizedBox(height: 14),
                   _Dato(
                     icono: Icons.today_outlined,
                     etiqueta: 'Publicada',
                     valor: Formato.fecha(donacion.creadaEn),
                   ),
+                  const SizedBox(height: 12),
+                  _Seccion(
+                    titulo: 'Donante',
+                    hijos: [
+                      if (vm.cargando)
+                        const _Cargando()
+                      else if (donante == null)
+                        const _NoDisponible(
+                          'No se pudo cargar la información del donante',
+                        )
+                      else ...[
+                        _Dato(
+                          icono: Icons.storefront_outlined,
+                          etiqueta: 'Nombre',
+                          valor: donante.nombre,
+                        ),
+                        if (donante.telefono.isNotEmpty)
+                          _Dato(
+                            icono: Icons.phone_outlined,
+                            etiqueta: 'Teléfono',
+                            valor: donante.telefono,
+                          ),
+                        _Dato(
+                          icono: Icons.mail_outline,
+                          etiqueta: 'Correo',
+                          valor: donante.correo,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _Seccion(
+                    titulo: 'Ubicación de entrega',
+                    hijos: [
+                      if (vm.cargando)
+                        const _Cargando()
+                      else if (punto == null)
+                        const _NoDisponible(
+                          'No se pudo cargar la ubicación de entrega',
+                        )
+                      else ...[
+                        _Dato(
+                          icono: Icons.place_outlined,
+                          etiqueta: 'Lugar',
+                          valor: punto.nombre,
+                        ),
+                        _Dato(
+                          icono: Icons.map_outlined,
+                          etiqueta: 'Dirección',
+                          valor: punto.direccion,
+                        ),
+                        if (punto.horario.isNotEmpty)
+                          _Dato(
+                            icono: Icons.schedule_outlined,
+                            etiqueta: 'Horario',
+                            valor: punto.horario,
+                          ),
+                        if (BotonComoLlegar.tieneUbicacion(punto)) ...[
+                          const SizedBox(height: 8),
+                          BotonComoLlegar(punto: punto),
+                        ],
+                      ],
+                    ],
+                  ),
                 ],
               ),
-              const SizedBox(height: 16),
-              _Seccion(
-                titulo: 'Donante',
-                hijos: [
-                  if (vm.cargando)
-                    const _Cargando()
-                  else if (donante == null)
-                    const _NoDisponible(
-                      'No se pudo cargar la información del donante',
-                    )
-                  else ...[
-                    _Dato(
-                      icono: Icons.storefront_outlined,
-                      etiqueta: 'Nombre',
-                      valor: donante.nombre,
-                    ),
-                    if (donante.telefono.isNotEmpty)
-                      _Dato(
-                        icono: Icons.phone_outlined,
-                        etiqueta: 'Teléfono',
-                        valor: donante.telefono,
-                      ),
-                    _Dato(
-                      icono: Icons.mail_outline,
-                      etiqueta: 'Correo',
-                      valor: donante.correo,
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 16),
-              _Seccion(
-                titulo: 'Ubicación de entrega',
-                hijos: [
-                  if (vm.cargando)
-                    const _Cargando()
-                  else if (punto == null)
-                    const _NoDisponible(
-                      'No se pudo cargar la ubicación de entrega',
-                    )
-                  else ...[
-                    _Dato(
-                      icono: Icons.place_outlined,
-                      etiqueta: 'Lugar',
-                      valor: punto.nombre,
-                    ),
-                    _Dato(
-                      icono: Icons.map_outlined,
-                      etiqueta: 'Dirección',
-                      valor: punto.direccion,
-                    ),
-                    if (punto.horario.isNotEmpty)
-                      _Dato(
-                        icono: Icons.schedule_outlined,
-                        etiqueta: 'Horario',
-                        valor: punto.horario,
-                      ),
-                  ],
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -156,10 +192,17 @@ class _PanelReserva extends StatelessWidget {
   const _PanelReserva();
 
   Future<void> _reservar(BuildContext context) async {
-    final ok = await context.read<DetalleDonacionViewModel>().reservar();
+    final vm = context.read<DetalleDonacionViewModel>();
+    final ok = await vm.reservar();
     if (!ok || !context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Donación reservada')),
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReservaConfirmadaView(
+          donacion: vm.donacion,
+          punto: vm.punto,
+          donante: vm.donante,
+        ),
+      ),
     );
   }
 
@@ -224,13 +267,6 @@ class _Seccion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Colors.black12),
-      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -276,7 +312,7 @@ class _Dato extends StatelessWidget {
             width: 84,
             child: Text(
               etiqueta,
-              style: const TextStyle(color: Colors.black54),
+              style: const TextStyle(color: TemaApp.gris),
             ),
           ),
           Expanded(child: Text(valor)),
@@ -310,6 +346,6 @@ class _NoDisponible extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(mensaje, style: const TextStyle(color: Colors.black54));
+    return Text(mensaje, style: const TextStyle(color: TemaApp.gris));
   }
 }
