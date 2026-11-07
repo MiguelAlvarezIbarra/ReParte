@@ -27,7 +27,7 @@ android {
         applicationId = "com.reparte.reparte"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23 // Firebase requiere Android 6.0 o superior
+        minSdkVersion = flutter.minSdkVersion // Flutter 3.47 exige Android 7.0 (API 24); Firebase pide 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
