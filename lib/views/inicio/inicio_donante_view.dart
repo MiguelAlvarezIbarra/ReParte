@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/usuario.dart';
-import '../../widgets/boton_cerrar_sesion.dart';
+import '../../core/tema/tema_app.dart';
+import '../../widgets/encabezado_inicio.dart';
 import '../../widgets/estado_vacio.dart';
 import '../donaciones/publicar_donacion_view.dart';
 
@@ -22,35 +23,39 @@ class InicioDonanteView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis donaciones'),
-        actions: const [BotonCerrarSesion()],
-      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          EncabezadoInicio(
+            nombre: usuario.nombre,
+            subtitulo: 'Donante',
+            accion: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: TemaApp.lima,
+                foregroundColor: TemaApp.verdeOscuro,
+              ),
+              onPressed: () => _publicar(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Publicar donación'),
+            ),
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
             child: Text(
-              'Hola, ${usuario.nombre}',
+              'Mis donaciones',
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          // TODO(T22): listar las donaciones del donante.
+          // TODO(T22): listar las donaciones del donante con su estado.
           const Expanded(
             child: EstadoVacio(
               icono: Icons.inventory_2_outlined,
-              titulo: 'Aún no has publicado donaciones',
+              titulo: 'Aquí verás tus donaciones',
               mensaje: 'Cuando te sobre comida en buen estado, publícala '
                   'y las asociaciones cercanas podrán recogerla.',
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _publicar(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Publicar donación'),
       ),
     );
   }

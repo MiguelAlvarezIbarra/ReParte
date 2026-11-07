@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/tema/tema_app.dart';
+import '../../core/utilidades/formato.dart';
 import '../../repositories/donacion_repository.dart';
 import '../../viewmodels/donaciones_viewmodel.dart';
 import '../../viewmodels/estado_ui.dart';
@@ -56,19 +58,76 @@ class _Contenido extends StatelessWidget {
                 'restaurantes y supermercados cercanos.',
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.all(24),
-          itemCount: vm.donaciones.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, i) => TarjetaDonacion(
-            donacion: vm.donaciones[i],
-            alTocar: () => DetalleDonacionView.abrir(
-              context,
-              vm.donaciones[i],
-              asociacionId: asociacionId,
-            ),
-          ),
+        final caducanHoy =
+            vm.donaciones.where((d) => Formato.esHoy(d.caducidad)).length;
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          children: [
+            if (caducanHoy > 0) ...[
+              _AvisoCaducanHoy(cantidad: caducanHoy),
+              const SizedBox(height: 16),
+            ],
+            for (final donacion in vm.donaciones) ...[
+              TarjetaDonacion(
+                donacion: donacion,
+                alTocar: () => DetalleDonacionView.abrir(
+                  context,
+                  donacion,
+                  asociacionId: asociacionId,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ],
         );
     }
+  }
+}
+
+/// Franja lima que avisa cuantas donaciones vencen hoy.
+class _AvisoCaducanHoy extends StatelessWidget {
+  const _AvisoCaducanHoy({required this.cantidad});
+
+  final int cantidad;
+
+  @override
+  Widget build(BuildContext context) {
+    final titulo = cantidad == 1
+        ? '1 donación caduca hoy'
+        : '$cantidad donaciones caducan hoy';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        color: TemaApp.lima,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: const TextStyle(
+                    fontFamily: TemaApp.fuenteTitulos,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    color: TemaApp.verdeOscuro,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Resérvalas antes de que se pierdan',
+                  style: TextStyle(color: TemaApp.verdeOscuro),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.timer_outlined,
+              size: 36, color: TemaApp.verdeOscuro),
+        ],
+      ),
+    );
   }
 }

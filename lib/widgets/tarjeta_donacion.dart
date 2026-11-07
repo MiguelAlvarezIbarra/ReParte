@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import '../core/tema/tema_app.dart';
 import '../core/utilidades/formato.dart';
 import '../models/donacion.dart';
+import 'etiqueta.dart';
+import 'ilustracion_alimento.dart';
 
-/// Resumen de una donacion dentro de una lista.
+/// Resumen de una donacion dentro de una lista: ilustracion con los kilos
+/// a la izquierda y los datos a la derecha.
 /// Si recibe [alTocar], toda la tarjeta se puede presionar.
 class TarjetaDonacion extends StatelessWidget {
   const TarjetaDonacion({super.key, required this.donacion, this.alTocar});
@@ -13,40 +17,42 @@ class TarjetaDonacion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    final color = Theme.of(context).colorScheme.primary;
     return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Colors.black12),
-      ),
       child: InkWell(
         onTap: alTocar,
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.all(12),
+          child: Row(
             children: [
-              Text(donacion.descripcion, style: texto.titleMedium),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.scale_outlined, size: 18, color: color),
-                  const SizedBox(width: 8),
-                  Text(Formato.kilos(donacion.cantidadKg)),
-                ],
+              IlustracionAlimento(
+                descripcion: donacion.descripcion,
+                etiqueta: Formato.kilos(donacion.cantidadKg),
               ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Icon(Icons.event_outlined, size: 18, color: color),
-                  const SizedBox(width: 8),
-                  Text('Caduca el ${Formato.fecha(donacion.caducidad)}'),
-                ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      donacion.descripcion,
+                      style: texto.titleMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Caduca el ${Formato.fecha(donacion.caducidad)}',
+                      style: texto.bodyMedium?.copyWith(color: TemaApp.gris),
+                    ),
+                    if (Formato.esHoy(donacion.caducidad)) ...[
+                      const SizedBox(height: 8),
+                      const Etiqueta.destacada('Caduca hoy'),
+                    ],
+                  ],
+                ),
               ),
+              const Icon(Icons.chevron_right, color: TemaApp.gris),
             ],
           ),
         ),
