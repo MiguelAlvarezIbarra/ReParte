@@ -31,6 +31,24 @@ class DonacionRepositoryFalso extends DonacionRepository {
 
   void emitir(List<Donacion> donaciones) => controlador.add(donaciones);
 
+  /// Lo que devuelven "Mis donaciones" y "Mis reservas".
+  List<Donacion> deDonante = [];
+  List<Donacion> reservadasPorAsociacion = [];
+  String? donanteConsultado;
+  String? asociacionConsultada;
+
+  @override
+  Stream<List<Donacion>> observarDeDonante(String donanteId) {
+    donanteConsultado = donanteId;
+    return Stream.value(deDonante);
+  }
+
+  @override
+  Stream<List<Donacion>> observarReservadasPor(String asociacionId) {
+    asociacionConsultada = asociacionId;
+    return Stream.value(reservadasPorAsociacion);
+  }
+
   @override
   Future<String> crearPuntoEntrega(PuntoEntrega punto) async {
     punto.validar();

@@ -67,10 +67,17 @@ void main() {
     await tester.tap(botonReservar);
     await tester.pumpAndSettle();
 
-    expect(find.text('Donación reservada'), findsOneWidget);
+    // Se abre el festejo con lo que se rescato y donde recogerlo.
+    expect(find.text('¡Muchas gracias!'), findsOneWidget);
+    expect(find.textContaining('se desperdicien 3 kg'), findsOneWidget);
+    expect(find.textContaining('Calle Hidalgo 12'), findsOneWidget);
+    expect(donaciones.reservadas.single.asociacionId, 'as1');
+
+    // Al regresar, el detalle ya dice que es suya.
+    await tester.tap(find.text('Ver la donación'));
+    await tester.pumpAndSettle();
     expect(find.textContaining('Reservada por ti'), findsOneWidget);
     expect(botonReservar, findsNothing);
-    expect(donaciones.reservadas.single.asociacionId, 'as1');
   });
 
   testWidgets('si ya no esta disponible muestra el aviso', (tester) async {

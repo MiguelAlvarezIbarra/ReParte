@@ -8,6 +8,7 @@ import 'repositories/usuario_repository.dart';
 import 'routes/rutas.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
+import 'services/navegacion_service.dart';
 import 'services/ubicacion_service.dart';
 import 'viewmodels/login_viewmodel.dart';
 import 'views/auth/registro_view.dart';
@@ -38,6 +39,7 @@ Future<void> main() async {
         Provider<UsuarioRepository>.value(value: usuarioRepository),
         Provider<DonacionRepository>.value(value: donacionRepository),
         Provider<UbicacionService>.value(value: ubicacionService),
+        Provider<NavegacionService>.value(value: const NavegacionService()),
       ],
       child: const ReParteApp(),
     ),
