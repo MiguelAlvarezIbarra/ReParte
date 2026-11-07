@@ -7,6 +7,7 @@ import 'repositories/donacion_repository.dart';
 import 'repositories/usuario_repository.dart';
 import 'routes/rutas.dart';
 import 'services/auth_service.dart';
+import 'services/conectividad_service.dart';
 import 'services/firestore_service.dart';
 import 'services/navegacion_service.dart';
 import 'services/rutas_service.dart';
@@ -14,6 +15,7 @@ import 'services/ubicacion_service.dart';
 import 'viewmodels/login_viewmodel.dart';
 import 'views/auth/registro_view.dart';
 import 'views/inicio/puerta_acceso.dart';
+import 'widgets/aviso_sin_conexion.dart';
 
 Future<void> main() async {
   // Firebase debe estar listo antes de que cualquier servicio lo use.
@@ -43,20 +45,30 @@ Future<void> main() async {
         Provider<NavegacionService>.value(value: const NavegacionService()),
         Provider<RutasService>.value(value: OsrmRutasService()),
       ],
-      child: const ReParteApp(),
+      child: ReParteApp(conectividad: ConnectivityPlusService()),
     ),
   );
 }
 
 class ReParteApp extends StatelessWidget {
-  const ReParteApp({super.key});
+  const ReParteApp({super.key, this.conectividad});
+
+  /// Si se da, muestra el aviso de "Sin conexion" arriba de toda la app.
+  final ConectividadService? conectividad;
 
   @override
   Widget build(BuildContext context) {
+    final conectividad = this.conectividad;
     return MaterialApp(
       title: 'ReParte',
       debugShowCheckedModeBanner: false,
       theme: TemaApp.claro,
+      builder: conectividad == null
+          ? null
+          : (context, pantalla) => AvisoSinConexion(
+                conectividad: conectividad,
+                child: pantalla ?? const SizedBox.shrink(),
+              ),
       home: const PuertaAcceso(),
       routes: {
         Rutas.registro: (_) => const RegistroView(),
