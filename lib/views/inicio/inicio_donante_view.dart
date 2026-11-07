@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/tema/tema_app.dart';
 import '../../models/usuario.dart';
+import '../../repositories/donacion_repository.dart';
+import '../../repositories/usuario_repository.dart';
+import '../../services/notificaciones_service.dart';
+import '../../viewmodels/avisador_reservas.dart';
 import '../../viewmodels/mis_donaciones_viewmodel.dart';
 import '../../widgets/encabezado_inicio.dart';
 import '../../widgets/titulo_pestana.dart';
@@ -23,6 +28,38 @@ class _InicioDonanteViewState extends State<InicioDonanteView> {
   /// 0 = Inicio, 2 = Perfil. "Publicar" (1) abre el formulario y no cambia
   /// de pestana.
   int _pestana = 0;
+  AvisadorReservas? _avisador;
+
+  @override
+  void initState() {
+    super.initState();
+    _iniciarAvisos();
+  }
+
+  /// Avisa al donante cuando reservan una de sus donaciones (T21).
+  /// Si la app no tiene servicio de notificaciones (por ejemplo en pruebas),
+  /// simplemente no avisa.
+  void _iniciarAvisos() {
+    final NotificacionesService notificaciones;
+    try {
+      notificaciones = context.read<NotificacionesService>();
+    } on ProviderNotFoundException {
+      return;
+    }
+    notificaciones.inicializar();
+    _avisador = AvisadorReservas(
+      donaciones: context.read<DonacionRepository>(),
+      usuarios: context.read<UsuarioRepository>(),
+      notificaciones: notificaciones,
+      donanteId: widget.usuario.id,
+    )..iniciar();
+  }
+
+  @override
+  void dispose() {
+    _avisador?.detener();
+    super.dispose();
+  }
 
   Future<void> _publicar() async {
     final publicada =

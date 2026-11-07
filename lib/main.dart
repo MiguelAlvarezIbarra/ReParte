@@ -10,6 +10,7 @@ import 'services/auth_service.dart';
 import 'services/conectividad_service.dart';
 import 'services/firestore_service.dart';
 import 'services/navegacion_service.dart';
+import 'services/notificaciones_service.dart';
 import 'services/rutas_service.dart';
 import 'services/ubicacion_service.dart';
 import 'viewmodels/login_viewmodel.dart';
@@ -44,6 +45,9 @@ Future<void> main() async {
         Provider<UbicacionService>.value(value: ubicacionService),
         Provider<NavegacionService>.value(value: const NavegacionService()),
         Provider<RutasService>.value(value: OsrmRutasService()),
+        Provider<NotificacionesService>.value(
+          value: LocalNotificacionesService(),
+        ),
       ],
       child: ReParteApp(conectividad: ConnectivityPlusService()),
     ),
