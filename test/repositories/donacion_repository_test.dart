@@ -307,4 +307,49 @@ void main() {
       );
     });
   });
+
+  group('marcarEntregada (T23)', () {
+    final reservada = Donacion(
+      id: 'd1',
+      donanteId: 'u1',
+      descripcion: 'Pan del dia',
+      cantidadKg: 3,
+      caducidad: DateTime.now().add(const Duration(days: 1)),
+      puntoEntregaId: 'p1',
+      creadaEn: DateTime(2026, 11, 7),
+      estado: EstadoDonacion.reservada,
+      asociacionId: 'a9',
+    );
+
+    test('cierra la donacion con estado entregada y la fecha', () async {
+      when(firestore.actualizarDocumento(any, any, any))
+          .thenAnswer((_) async {});
+
+      final entregada = await repo.marcarEntregada(reservada);
+
+      expect(entregada.estado, EstadoDonacion.entregada);
+      expect(entregada.entregadaEn, isNotNull);
+      expect(entregada.estaCerrada, isTrue);
+      final cambios = verify(firestore.actualizarDocumento(
+        'donaciones',
+        'd1',
+        captureAny,
+      )).captured.single as Map<String, dynamic>;
+      expect(cambios['estado'], 'entregada');
+      expect(cambios['entregadaEn'], isA<String>());
+    });
+
+    test('solo se puede entregar una donacion reservada', () async {
+      final disponible = reservada.copyWith(estado: EstadoDonacion.disponible);
+      final yaEntregada = reservada.copyWith(estado: EstadoDonacion.entregada);
+
+      for (final d in [disponible, yaEntregada]) {
+        await expectLater(
+          repo.marcarEntregada(d),
+          throwsA(isA<DonacionNoEntregable>()),
+        );
+      }
+      verifyNever(firestore.actualizarDocumento(any, any, any));
+    });
+  });
 }

@@ -18,6 +18,9 @@ class Donacion {
   /// Momento en que se reservo; null mientras esta disponible.
   final DateTime? reservadaEn;
 
+  /// Momento en que se entrego; despues de eso ya no cambia.
+  final DateTime? entregadaEn;
+
   const Donacion({
     required this.id,
     required this.donanteId,
@@ -29,7 +32,12 @@ class Donacion {
     this.estado = EstadoDonacion.disponible,
     this.asociacionId,
     this.reservadaEn,
+    this.entregadaEn,
   });
+
+  /// Entregada o cancelada: el registro queda cerrado.
+  bool get estaCerrada =>
+      estado == EstadoDonacion.entregada || estado == EstadoDonacion.cancelada;
 
   bool get estaVigente => caducidad.isAfter(DateTime.now());
 
@@ -63,6 +71,7 @@ class Donacion {
     EstadoDonacion? estado,
     String? asociacionId,
     DateTime? reservadaEn,
+    DateTime? entregadaEn,
   }) {
     return Donacion(
       id: id,
@@ -75,6 +84,7 @@ class Donacion {
       estado: estado ?? this.estado,
       asociacionId: asociacionId ?? this.asociacionId,
       reservadaEn: reservadaEn ?? this.reservadaEn,
+      entregadaEn: entregadaEn ?? this.entregadaEn,
     );
   }
 
@@ -96,6 +106,10 @@ class Donacion {
         final String fecha => DateTime.parse(fecha),
         _ => null,
       },
+      entregadaEn: switch (map['entregadaEn']) {
+        final String fecha => DateTime.parse(fecha),
+        _ => null,
+      },
     );
   }
 
@@ -109,5 +123,6 @@ class Donacion {
         'estado': estado.name,
         'asociacionId': asociacionId,
         'reservadaEn': reservadaEn?.toIso8601String(),
+        'entregadaEn': entregadaEn?.toIso8601String(),
       };
 }

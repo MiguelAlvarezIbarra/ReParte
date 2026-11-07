@@ -19,11 +19,13 @@ class DetalleDonacionView extends StatelessWidget {
 
   /// Abre el detalle de [donacion] con su propio ViewModel.
   /// Necesita un DonacionRepository y un UsuarioRepository en el Provider.
-  /// Con [asociacionId] muestra el boton para reservarla.
+  /// Con [asociacionId] muestra el boton para reservarla; con [usuarioId]
+  /// (el donante o la asociacion) permite marcarla como entregada.
   static Future<void> abrir(
     BuildContext context,
     Donacion donacion, {
     String? asociacionId,
+    String? usuarioId,
   }) {
     final donaciones = context.read<DonacionRepository>();
     final usuarios = context.read<UsuarioRepository>();
@@ -35,6 +37,7 @@ class DetalleDonacionView extends StatelessWidget {
             donaciones: donaciones,
             usuarios: usuarios,
             asociacionId: asociacionId,
+            usuarioId: usuarioId,
           )..cargar(),
           child: const DetalleDonacionView(),
         ),
@@ -56,8 +59,7 @@ class DetalleDonacionView extends StatelessWidget {
         title: const Text('Detalle de la donación'),
         backgroundColor: estilo.fondo,
       ),
-      bottomNavigationBar:
-          vm.asociacionId == null ? null : const _PanelReserva(),
+      bottomNavigationBar: vm.usuarioId == null ? null : const _PanelReserva(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -190,7 +192,8 @@ class DetalleDonacionView extends StatelessWidget {
   }
 }
 
-/// Parte de abajo para la asociacion: reservar o ver que ya es suya.
+/// Parte de abajo del detalle segun quien la mira y en que estado esta:
+/// reservar, marcar como entregada o el aviso de que ya se entrego.
 class _PanelReserva extends StatelessWidget {
   const _PanelReserva();
 
@@ -209,52 +212,131 @@ class _PanelReserva extends StatelessWidget {
     );
   }
 
+  Future<void> _entregar(BuildContext context) async {
+    final vm = context.read<DetalleDonacionViewModel>();
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: const Text('¿Marcar como entregada?'),
+        content: const Text(
+          'La donación quedará cerrada con la fecha de hoy y ya no se podrá '
+          'cambiar.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(true),
+            child: const Text('Sí, se entregó'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !context.mounted) return;
+    final ok = await vm.marcarEntregada();
+    if (!ok || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Donación entregada. ¡Gracias!')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<DetalleDonacionViewModel>();
-    final colores = Theme.of(context).colorScheme;
+    final donacion = vm.donacion;
+    final esDonante = vm.usuarioId == donacion.donanteId;
+    final reservada = donacion.estado == EstadoDonacion.reservada;
+    final error = vm.errorReserva ?? vm.errorEntrega;
+
+    final hijos = <Widget>[
+      if (error != null) ...[
+        MensajeError(error),
+        const SizedBox(height: 12),
+      ],
+    ];
+    if (donacion.estado == EstadoDonacion.entregada) {
+      hijos.add(_Aviso(
+        icono: Icons.verified_outlined,
+        texto: donacion.entregadaEn == null
+            ? 'Donación entregada.'
+            : 'Entregada el ${Formato.fecha(donacion.entregadaEn!)}. '
+                'Se rescataron ${Formato.kilos(donacion.cantidadKg)} de comida.',
+      ));
+    } else if (vm.reservadaPorMi) {
+      hijos.add(const _Aviso(
+        icono: Icons.check_circle,
+        texto: 'Reservada por ti. Pasa a recogerla al punto de entrega.',
+      ));
+    } else if (esDonante && reservada) {
+      hijos.add(const _Aviso(
+        icono: Icons.bookmark,
+        texto: 'Reservada. La asociación pasará a recogerla.',
+      ));
+    } else if (vm.asociacionId != null) {
+      hijos.add(FilledButton.icon(
+        onPressed: vm.puedeReservar ? () => _reservar(context) : null,
+        icon: vm.reservando
+            ? const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.bookmark_add_outlined),
+        label: const Text('Reservar donación'),
+      ));
+    }
+    if (vm.puedeEntregar || vm.entregando) {
+      hijos
+        ..add(const SizedBox(height: 12))
+        ..add(FilledButton.icon(
+          onPressed: vm.puedeEntregar ? () => _entregar(context) : null,
+          icon: vm.entregando
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.task_alt),
+          label: const Text('Marcar como entregada'),
+        ));
+    }
+    if (hijos.isEmpty) return const SizedBox.shrink();
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (vm.errorReserva != null) ...[
-              MensajeError(vm.errorReserva!),
-              const SizedBox(height: 12),
-            ],
-            if (vm.reservadaPorMi)
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: colores.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: colores.primary),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Reservada por ti. Pasa a recogerla al '
-                          'punto de entrega.'),
-                    ),
-                  ],
-                ),
-              )
-            else
-              FilledButton.icon(
-                onPressed: vm.puedeReservar ? () => _reservar(context) : null,
-                icon: vm.reservando
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.bookmark_add_outlined),
-                label: const Text('Reservar donación'),
-              ),
-          ],
+          children: hijos,
         ),
+      ),
+    );
+  }
+}
+
+/// Recuadro verde claro con un mensaje de estado.
+class _Aviso extends StatelessWidget {
+  const _Aviso({required this.icono, required this.texto});
+
+  final IconData icono;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colores.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icono, color: colores.primary),
+          const SizedBox(width: 8),
+          Expanded(child: Text(texto)),
+        ],
       ),
     );
   }

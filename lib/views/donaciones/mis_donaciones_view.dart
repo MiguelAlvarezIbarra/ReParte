@@ -102,6 +102,7 @@ class _Lista extends StatelessWidget {
               context,
               lista[i],
               asociacionId: esDonante ? null : vm.usuarioId,
+              usuarioId: vm.usuarioId,
             ),
           ),
         );

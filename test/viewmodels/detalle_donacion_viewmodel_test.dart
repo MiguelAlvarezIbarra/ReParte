@@ -176,4 +176,53 @@ void main() {
       expect(vm.puedeReservar, isTrue);
     });
   });
+
+  group('marcarEntregada (T23)', () {
+    final reservada = donacionDePrueba('a', estado: EstadoDonacion.reservada)
+        .copyWith(asociacionId: 'as1');
+
+    DetalleDonacionViewModel vista({String? usuarioId, String? asociacionId}) =>
+        DetalleDonacionViewModel(
+          donacion: reservada,
+          donaciones: donaciones,
+          usuarios: usuarios,
+          usuarioId: usuarioId,
+          asociacionId: asociacionId,
+        );
+
+    test('el donante y la asociacion que la reservo pueden entregarla', () {
+      expect(vista(usuarioId: 'd1').puedeEntregar, isTrue);
+      expect(vista(asociacionId: 'as1').puedeEntregar, isTrue);
+    });
+
+    test('otra asociacion o alguien sin sesion no pueden', () {
+      expect(vista(asociacionId: 'otra').puedeEntregar, isFalse);
+      expect(vista().puedeEntregar, isFalse);
+    });
+
+    test('al entregarla queda cerrada y ya no se puede volver a entregar',
+        () async {
+      final vm = vista(usuarioId: 'd1');
+
+      final ok = await vm.marcarEntregada();
+
+      expect(ok, isTrue);
+      expect(vm.donacion.estado, EstadoDonacion.entregada);
+      expect(vm.donacion.entregadaEn, isNotNull);
+      expect(vm.puedeEntregar, isFalse);
+      expect(donaciones.entregadas, hasLength(1));
+    });
+
+    test('si falla la conexion muestra el error y permite reintentar',
+        () async {
+      donaciones.errorAlEntregar = Exception('sin conexion');
+      final vm = vista(usuarioId: 'd1');
+
+      final ok = await vm.marcarEntregada();
+
+      expect(ok, isFalse);
+      expect(vm.errorEntrega, contains('No se pudo marcar'));
+      expect(vm.puedeEntregar, isTrue);
+    });
+  });
 }

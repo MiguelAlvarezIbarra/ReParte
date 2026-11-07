@@ -14,6 +14,16 @@ class DonacionNoDisponible implements Exception {
   String toString() => mensaje;
 }
 
+/// Solo una donacion reservada se puede marcar como entregada.
+class DonacionNoEntregable implements Exception {
+  const DonacionNoEntregable();
+
+  String get mensaje => 'Solo se puede entregar una donación reservada';
+
+  @override
+  String toString() => mensaje;
+}
+
 /// Fuente unica de verdad de las donaciones.
 /// Los ViewModels solo hablan con esta clase, nunca con Firebase.
 class DonacionRepository {
@@ -74,6 +84,27 @@ class DonacionRepository {
       },
     );
     return reservada;
+  }
+
+  /// Cierra la donacion como entregada con la fecha de hoy y la devuelve.
+  /// Lanza [DonacionNoEntregable] si no esta reservada.
+  Future<Donacion> marcarEntregada(Donacion donacion) async {
+    if (donacion.estado != EstadoDonacion.reservada) {
+      throw const DonacionNoEntregable();
+    }
+    final entregada = donacion.copyWith(
+      estado: EstadoDonacion.entregada,
+      entregadaEn: DateTime.now(),
+    );
+    await _firestore.actualizarDocumento(
+      Colecciones.donaciones,
+      donacion.id,
+      {
+        'estado': entregada.estado.name,
+        'entregadaEn': entregada.entregadaEn!.toIso8601String(),
+      },
+    );
+    return entregada;
   }
 
   /// Lugar de entrega de una donacion; null si ya no existe.
