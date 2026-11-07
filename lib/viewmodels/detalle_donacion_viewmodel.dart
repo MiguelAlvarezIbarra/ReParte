@@ -10,15 +10,20 @@ import 'estado_ui.dart';
 /// y el lugar donde se entrega. No sabe nada de widgets.
 /// La donacion ya viene en mano; si el donante o el punto no se pueden leer,
 /// el resto del detalle se muestra igual.
+/// Si lo abre una asociacion ([asociacionId]), tambien puede reservarla.
 class DetalleDonacionViewModel extends ChangeNotifier {
   DetalleDonacionViewModel({
     required this.donacion,
     required DonacionRepository donaciones,
     required UsuarioRepository usuarios,
+    this.asociacionId,
   })  : _donaciones = donaciones,
         _usuarios = usuarios;
 
-  final Donacion donacion;
+  Donacion donacion;
+
+  /// Asociacion que mira el detalle; null si lo abre otro rol.
+  final String? asociacionId;
   final DonacionRepository _donaciones;
   final UsuarioRepository _usuarios;
 
@@ -26,6 +31,18 @@ class DetalleDonacionViewModel extends ChangeNotifier {
   Usuario? donante;
   PuntoEntrega? punto;
   bool _cerrado = false;
+
+  bool reservando = false;
+  String? errorReserva;
+
+  bool get puedeReservar =>
+      asociacionId != null && donacion.estaDisponible && !reservando;
+
+  /// True si la reservo la asociacion que mira el detalle.
+  bool get reservadaPorMi =>
+      asociacionId != null &&
+      donacion.estado == EstadoDonacion.reservada &&
+      donacion.asociacionId == asociacionId;
 
   bool get cargando =>
       estado == EstadoUI.inicial || estado == EstadoUI.cargando;
@@ -45,6 +62,28 @@ class DetalleDonacionViewModel extends ChangeNotifier {
     punto = resultados[1] as PuntoEntrega?;
     estado = EstadoUI.listo;
     if (!_cerrado) notifyListeners();
+  }
+
+  /// Reserva la donacion para la asociacion. Devuelve true si lo logro.
+  Future<bool> reservar() async {
+    if (!puedeReservar) return false;
+    reservando = true;
+    errorReserva = null;
+    notifyListeners();
+    try {
+      donacion = await _donaciones.reservar(donacion, asociacionId!);
+      return true;
+    } on DonacionNoDisponible catch (e) {
+      errorReserva = e.mensaje;
+      return false;
+    } catch (_) {
+      errorReserva =
+          'No se pudo reservar. Revisa tu conexión e intenta de nuevo.';
+      return false;
+    } finally {
+      reservando = false;
+      if (!_cerrado) notifyListeners();
+    }
   }
 
   /// Un dato que falla no tira el resto: se queda en null.

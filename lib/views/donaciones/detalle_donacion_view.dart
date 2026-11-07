@@ -5,6 +5,7 @@ import '../../models/donacion.dart';
 import '../../repositories/donacion_repository.dart';
 import '../../repositories/usuario_repository.dart';
 import '../../viewmodels/detalle_donacion_viewmodel.dart';
+import '../../widgets/mensaje_error.dart';
 
 /// Todos los datos de una donacion: la comida, quien la dona y donde se recoge.
 class DetalleDonacionView extends StatelessWidget {
@@ -12,7 +13,12 @@ class DetalleDonacionView extends StatelessWidget {
 
   /// Abre el detalle de [donacion] con su propio ViewModel.
   /// Necesita un DonacionRepository y un UsuarioRepository en el Provider.
-  static Future<void> abrir(BuildContext context, Donacion donacion) {
+  /// Con [asociacionId] muestra el boton para reservarla.
+  static Future<void> abrir(
+    BuildContext context,
+    Donacion donacion, {
+    String? asociacionId,
+  }) {
     final donaciones = context.read<DonacionRepository>();
     final usuarios = context.read<UsuarioRepository>();
     return Navigator.of(context).push(
@@ -22,6 +28,7 @@ class DetalleDonacionView extends StatelessWidget {
             donacion: donacion,
             donaciones: donaciones,
             usuarios: usuarios,
+            asociacionId: asociacionId,
           )..cargar(),
           child: const DetalleDonacionView(),
         ),
@@ -38,6 +45,8 @@ class DetalleDonacionView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalle de la donación')),
+      bottomNavigationBar:
+          vm.asociacionId == null ? null : const _PanelReserva(),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -136,6 +145,69 @@ class DetalleDonacionView extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Parte de abajo para la asociacion: reservar o ver que ya es suya.
+class _PanelReserva extends StatelessWidget {
+  const _PanelReserva();
+
+  Future<void> _reservar(BuildContext context) async {
+    final ok = await context.read<DetalleDonacionViewModel>().reservar();
+    if (!ok || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Donación reservada')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<DetalleDonacionViewModel>();
+    final colores = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (vm.errorReserva != null) ...[
+              MensajeError(vm.errorReserva!),
+              const SizedBox(height: 12),
+            ],
+            if (vm.reservadaPorMi)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: colores.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: colores.primary),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Reservada por ti. Pasa a recogerla al '
+                          'punto de entrega.'),
+                    ),
+                  ],
+                ),
+              )
+            else
+              FilledButton.icon(
+                onPressed: vm.puedeReservar ? () => _reservar(context) : null,
+                icon: vm.reservando
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.bookmark_add_outlined),
+                label: const Text('Reservar donación'),
+              ),
+          ],
         ),
       ),
     );
