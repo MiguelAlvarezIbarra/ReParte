@@ -8,7 +8,7 @@ import '../../viewmodels/estado_ui.dart';
 import '../../viewmodels/mapa_donaciones_viewmodel.dart';
 import '../../widgets/boton_como_llegar.dart';
 import '../../widgets/estado_vacio.dart';
-import '../../widgets/mensaje_error.dart';
+import '../../widgets/estado_error.dart';
 import '../../widgets/tarjeta_donacion.dart';
 import '../donaciones/detalle_donacion_view.dart';
 
@@ -47,9 +47,9 @@ class _Contenido extends StatelessWidget {
       case EstadoUI.cargando:
         return const Center(child: CircularProgressIndicator());
       case EstadoUI.error:
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: MensajeError(vm.mensajeError ?? 'Ocurrió un error'),
+        return EstadoError(
+          mensaje: vm.mensajeError ?? 'Ocurrió un error',
+          alReintentar: vm.escuchar,
         );
       case EstadoUI.listo:
         if (vm.enMapa.isEmpty) {
