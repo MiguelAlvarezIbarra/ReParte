@@ -15,24 +15,32 @@ import 'detalle_donacion_view.dart';
 /// Necesita un DonacionRepository arriba en el arbol de Provider.
 /// Con [asociacionId], el detalle que se abre permite reservar.
 class ListaDonaciones extends StatelessWidget {
-  const ListaDonaciones({super.key, this.asociacionId});
+  const ListaDonaciones({
+    super.key,
+    this.asociacionId,
+    this.conBuscador = false,
+  });
 
   final String? asociacionId;
+
+  /// Muestra arriba un campo para filtrar por lo que se dona.
+  final bool conBuscador;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) =>
           DonacionesViewModel(context.read<DonacionRepository>())..escuchar(),
-      child: _Contenido(asociacionId: asociacionId),
+      child: _Contenido(asociacionId: asociacionId, conBuscador: conBuscador),
     );
   }
 }
 
 class _Contenido extends StatelessWidget {
-  const _Contenido({this.asociacionId});
+  const _Contenido({this.asociacionId, this.conBuscador = false});
 
   final String? asociacionId;
+  final bool conBuscador;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +58,7 @@ class _Contenido extends StatelessWidget {
           ),
         );
       case EstadoUI.listo:
-        if (vm.donaciones.isEmpty) {
+        if (vm.donaciones.isEmpty && !vm.sinResultados) {
           return const EstadoVacio(
             icono: Icons.volunteer_activism_outlined,
             titulo: 'No hay donaciones disponibles',
@@ -63,7 +71,20 @@ class _Contenido extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           children: [
-            if (caducanHoy > 0) ...[
+            if (conBuscador) ...[
+              const _Buscador(),
+              const SizedBox(height: 16),
+            ],
+            if (vm.sinResultados)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Text(
+                  'No encontramos donaciones con "${vm.busqueda.trim()}"',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: TemaApp.gris),
+                ),
+              ),
+            if (caducanHoy > 0 && !vm.sinResultados) ...[
               _AvisoCaducanHoy(cantidad: caducanHoy),
               const SizedBox(height: 16),
             ],
@@ -127,6 +148,63 @@ class _AvisoCaducanHoy extends StatelessWidget {
           const Icon(Icons.timer_outlined,
               size: 36, color: TemaApp.verdeOscuro),
         ],
+      ),
+    );
+  }
+}
+
+/// Campo para filtrar la lista por lo que se dona ("pan", "fruta"...).
+class _Buscador extends StatefulWidget {
+  const _Buscador();
+
+  @override
+  State<_Buscador> createState() => _BuscadorState();
+}
+
+class _BuscadorState extends State<_Buscador> {
+  late final _texto = TextEditingController(
+    text: context.read<DonacionesViewModel>().busqueda,
+  );
+
+  @override
+  void dispose() {
+    _texto.dispose();
+    super.dispose();
+  }
+
+  void _limpiar() {
+    _texto.clear();
+    context.read<DonacionesViewModel>().buscar('');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _texto,
+      textInputAction: TextInputAction.search,
+      onChanged: context.read<DonacionesViewModel>().buscar,
+      decoration: InputDecoration(
+        hintText: '¿Qué comida buscas?',
+        prefixIcon: const Icon(Icons.search),
+        fillColor: TemaApp.campo,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide.none,
+        ),
+        suffixIcon: ValueListenableBuilder(
+          valueListenable: _texto,
+          builder: (_, valor, __) => valor.text.isEmpty
+              ? const SizedBox.shrink()
+              : IconButton(
+                  tooltip: 'Borrar búsqueda',
+                  icon: const Icon(Icons.close),
+                  onPressed: _limpiar,
+                ),
+        ),
       ),
     );
   }

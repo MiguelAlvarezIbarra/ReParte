@@ -265,8 +265,7 @@ void main() {
       creadaEn: DateTime(2026, 11, 7),
     );
 
-    test('cambia el estado a reservada con la asociacion y la fecha',
-        () async {
+    test('cambia el estado a reservada con la asociacion y la fecha', () async {
       when(firestore.actualizarDocumento(any, any, any))
           .thenAnswer((_) async {});
 

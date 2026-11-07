@@ -14,8 +14,29 @@ class DonacionesViewModel extends ChangeNotifier {
   StreamSubscription<List<Donacion>>? _suscripcion;
 
   EstadoUI estado = EstadoUI.inicial;
-  List<Donacion> donaciones = [];
   String? mensajeError;
+  List<Donacion> _disponibles = [];
+
+  /// Texto del buscador; vacio muestra todas.
+  String busqueda = '';
+
+  /// Las disponibles que coinciden con la busqueda.
+  List<Donacion> get donaciones {
+    final texto = busqueda.trim().toLowerCase();
+    if (texto.isEmpty) return _disponibles;
+    return _disponibles
+        .where((d) => d.descripcion.toLowerCase().contains(texto))
+        .toList();
+  }
+
+  /// Hay donaciones, pero ninguna coincide con lo que se busco.
+  bool get sinResultados => _disponibles.isNotEmpty && donaciones.isEmpty;
+
+  void buscar(String texto) {
+    if (texto == busqueda) return;
+    busqueda = texto;
+    notifyListeners();
+  }
 
   /// Empieza a escuchar los cambios. Se puede llamar de nuevo para reintentar.
   void escuchar() {
@@ -34,7 +55,7 @@ class DonacionesViewModel extends ChangeNotifier {
   }
 
   void _alRecibir(List<Donacion> todas) {
-    donaciones = todas.where((d) => d.estaDisponible).toList()
+    _disponibles = todas.where((d) => d.estaDisponible).toList()
       ..sort((a, b) => a.caducidad.compareTo(b.caducidad));
     mensajeError = null;
     estado = EstadoUI.listo;

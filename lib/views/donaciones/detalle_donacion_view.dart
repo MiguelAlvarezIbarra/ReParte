@@ -7,6 +7,7 @@ import '../../repositories/donacion_repository.dart';
 import '../../repositories/usuario_repository.dart';
 import '../../viewmodels/detalle_donacion_viewmodel.dart';
 import '../../widgets/etiqueta.dart';
+import '../../widgets/boton_como_llegar.dart';
 import '../../widgets/ilustracion_alimento.dart';
 import '../../widgets/mensaje_error.dart';
 import 'reserva_confirmada_view.dart';
@@ -169,6 +170,10 @@ class DetalleDonacionView extends StatelessWidget {
                             etiqueta: 'Horario',
                             valor: punto.horario,
                           ),
+                        if (BotonComoLlegar.tieneUbicacion(punto)) ...[
+                          const SizedBox(height: 8),
+                          BotonComoLlegar(punto: punto),
+                        ],
                       ],
                     ],
                   ),

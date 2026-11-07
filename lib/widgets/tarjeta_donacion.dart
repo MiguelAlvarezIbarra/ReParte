@@ -9,10 +9,18 @@ import 'ilustracion_alimento.dart';
 /// a la izquierda y los datos a la derecha.
 /// Si recibe [alTocar], toda la tarjeta se puede presionar.
 class TarjetaDonacion extends StatelessWidget {
-  const TarjetaDonacion({super.key, required this.donacion, this.alTocar});
+  const TarjetaDonacion({
+    super.key,
+    required this.donacion,
+    this.alTocar,
+    this.mostrarEstado = false,
+  });
 
   final Donacion donacion;
   final VoidCallback? alTocar;
+
+  /// Muestra si esta disponible, reservada o entregada (en "Mis ...").
+  final bool mostrarEstado;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +53,12 @@ class TarjetaDonacion extends StatelessWidget {
                       'Caduca el ${Formato.fecha(donacion.caducidad)}',
                       style: texto.bodyMedium?.copyWith(color: TemaApp.gris),
                     ),
-                    if (Formato.esHoy(donacion.caducidad)) ...[
+                    if (mostrarEstado) ...[
+                      const SizedBox(height: 8),
+                      donacion.estado == EstadoDonacion.reservada
+                          ? Etiqueta.destacada(Formato.estado(donacion.estado))
+                          : Etiqueta(Formato.estado(donacion.estado)),
+                    ] else if (Formato.esHoy(donacion.caducidad)) ...[
                       const SizedBox(height: 8),
                       const Etiqueta.destacada('Caduca hoy'),
                     ],

@@ -37,6 +37,23 @@ class DonacionRepository {
             ]);
   }
 
+  /// Todas las donaciones que publico [donanteId], en tiempo real.
+  Stream<List<Donacion>> observarDeDonante(String donanteId) =>
+      _observarDonde('donanteId', donanteId);
+
+  /// Las donaciones que reservo [asociacionId], en tiempo real.
+  Stream<List<Donacion>> observarReservadasPor(String asociacionId) =>
+      _observarDonde('asociacionId', asociacionId);
+
+  Stream<List<Donacion>> _observarDonde(String campo, String valor) {
+    return _firestore
+        .observarDonde(Colecciones.donaciones, campo: campo, valor: valor)
+        .map((docs) => [
+              for (final doc in docs)
+                if (_aDonacion(doc) case final donacion?) donacion,
+            ]);
+  }
+
   /// Reserva [donacion] para [asociacionId] y devuelve la donacion reservada.
   /// Lanza [DonacionNoDisponible] si ya no esta disponible.
   // TODO(T20): hacerlo en una transaccion para evitar la doble reserva.

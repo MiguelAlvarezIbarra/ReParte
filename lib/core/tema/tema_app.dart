@@ -139,6 +139,25 @@ class TemaApp {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(color: verde),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.white,
+        indicatorColor: lima,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (estados) => IconThemeData(
+            color: estados.contains(WidgetState.selected) ? verdeOscuro : gris,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (estados) => TextStyle(
+            fontSize: 12,
+            fontWeight: estados.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w400,
+            color: estados.contains(WidgetState.selected) ? verde : gris,
+          ),
+        ),
+      ),
     );
   }
 }
