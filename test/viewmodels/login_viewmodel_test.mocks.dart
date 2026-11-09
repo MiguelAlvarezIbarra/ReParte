@@ -125,4 +125,14 @@ class MockUsuarioRepository extends _i1.Mock implements _i3.UsuarioRepository {
         returnValue: _i4.Future<void>.value(),
         returnValueForMissingStub: _i4.Future<void>.value(),
       ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> recuperarContrasena(String? correo) => (super.noSuchMethod(
+        Invocation.method(
+          #recuperarContrasena,
+          [correo],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 }

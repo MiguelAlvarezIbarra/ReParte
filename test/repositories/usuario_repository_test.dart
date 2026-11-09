@@ -81,4 +81,12 @@ void main() {
       'No se pudo completar la operación',
     );
   });
+
+  test('recuperarContrasena pide el correo a Firebase Auth', () async {
+    when(auth.enviarCorreoRecuperacion(any)).thenAnswer((_) async {});
+
+    await repo.recuperarContrasena('laura@restaurante.mx');
+
+    verify(auth.enviarCorreoRecuperacion('laura@restaurante.mx')).called(1);
+  });
 }
