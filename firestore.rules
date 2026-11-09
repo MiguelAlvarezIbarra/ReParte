@@ -1,13 +1,14 @@
 rules_version = '2';
 
-// Reglas de seguridad de ReParte (tarea T05).
+// Reglas de seguridad de ReParte (T05, reforzadas en T20, T23 y T36).
 // Regla general: solo un usuario autenticado puede leer y escribir.
-// Ademas, cada quien solo modifica lo que le pertenece.
+// Ademas, cada quien solo modifica lo que le pertenece y segun su rol.
 //
 // Colecciones (ver lib/core/constantes/colecciones.dart):
 //   usuarios/{uid}         nombre, correo, rol, telefono
 //   donaciones/{id}        donanteId, descripcion, cantidadKg, caducidad,
-//                          puntoEntregaId, creadaEn, estado, asociacionId
+//                          puntoEntregaId, creadaEn, estado, asociacionId,
+//                          reservadaEn, entregadaEn
 //   puntos_entrega/{id}    donanteId, nombre, direccion, latitud, longitud,
 //                          horario
 service cloud.firestore {
@@ -21,52 +22,107 @@ service cloud.firestore {
       return autenticado() && request.auth.uid == uid;
     }
 
+    // Rol guardado en el perfil de quien hace la peticion (T36).
+    function rol() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol;
+    }
+
+    function esDonante() {
+      return autenticado() && rol() == 'donante';
+    }
+
+    function esAsociacion() {
+      return autenticado() && rol() == 'asociacion';
+    }
+
+    // Campos que cambian en una actualizacion.
+    function cambios() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------- Usuarios ----------
     // Cada usuario crea y edita solo su propio perfil.
+    // El rol se elige al registrarse y despues ya no se puede cambiar (T36).
     match /usuarios/{uid} {
       allow read: if autenticado();
-      allow create, update: if esDueno(uid);
+      allow create: if esDueno(uid)
+        && request.resource.data.rol in ['donante', 'asociacion'];
+      allow update: if esDueno(uid)
+        && request.resource.data.rol == resource.data.rol;
       allow delete: if false;
     }
 
+    // ---------- Donaciones ----------
     // Ciclo de una donacion:
-    //   disponible -> reservada  solo si sigue disponible y a nombre de quien
-    //                            reserva (evita la doble reserva, T20)
-    //   reservada  -> entregada  solo el donante o la asociacion que la reservo
-    //   el donante puede editar o cancelar la suya mientras no este cerrada.
+    //   (nueva)    -> disponible  solo un donante, a su nombre y con datos validos
+    //   disponible -> reservada   solo una asociacion, si sigue disponible y a
+    //                             nombre de quien reserva (evita la doble reserva, T20)
+    //   reservada  -> entregada   solo el donante o la asociacion que la reservo (T23)
+    //   disponible -> cancelada   solo el donante
     // Una donacion entregada o cancelada queda cerrada: ya no cambia (T23).
     function cerrada() {
       return resource.data.estado in ['entregada', 'cancelada'];
     }
 
+    // Al publicar: estado disponible, sin asociacion y con kilos validos (T36).
+    function publicacionValida() {
+      let d = request.resource.data;
+      return d.estado == 'disponible'
+        && d.get('asociacionId', null) == null
+        && d.get('reservadaEn', null) == null
+        && d.get('entregadaEn', null) == null
+        && d.cantidadKg is number && d.cantidadKg > 0
+        && d.descripcion is string && d.descripcion.size() > 0
+        && d.puntoEntregaId is string;
+    }
+
     function reservaValida() {
-      return resource.data.estado == 'disponible'
+      return esAsociacion()
+        && resource.data.estado == 'disponible'
         && resource.data.get('asociacionId', null) == null
         && request.resource.data.estado == 'reservada'
-        && request.resource.data.asociacionId == request.auth.uid;
+        && request.resource.data.asociacionId == request.auth.uid
+        && cambios().hasOnly(['estado', 'asociacionId', 'reservadaEn']);
     }
 
     function entregaValida() {
       return resource.data.estado == 'reservada'
         && request.resource.data.estado == 'entregada'
-        && request.resource.data.asociacionId == resource.data.asociacionId
         && (request.auth.uid == resource.data.donanteId
-            || request.auth.uid == resource.data.asociacionId);
+            || request.auth.uid == resource.data.asociacionId)
+        && cambios().hasOnly(['estado', 'entregadaEn']);
+    }
+
+    // El donante puede corregir los datos de su donacion o cancelarla
+    // mientras siga disponible, pero no mover el ciclo a mano: no puede
+    // reservarla, quitar la reserva ni cambiar la asociacion (T36).
+    function edicionDelDonante() {
+      return request.auth.uid == resource.data.donanteId
+        && (
+          !cambios().hasAny(['estado', 'asociacionId', 'reservadaEn', 'entregadaEn'])
+          || (resource.data.estado == 'disponible'
+              && request.resource.data.estado == 'cancelada'
+              && cambios().hasOnly(['estado']))
+        );
     }
 
     match /donaciones/{id} {
       allow read: if autenticado();
-      allow create: if esDueno(request.resource.data.donanteId);
+      allow create: if esDueno(request.resource.data.donanteId)
+        && esDonante()
+        && publicacionValida();
       allow update: if autenticado()
         && request.resource.data.donanteId == resource.data.donanteId
         && !cerrada()
-        && (reservaValida() || entregaValida()
-            || request.auth.uid == resource.data.donanteId);
-      allow delete: if esDueno(resource.data.donanteId);
+        && (reservaValida() || entregaValida() || edicionDelDonante());
+      allow delete: if esDueno(resource.data.donanteId)
+        && resource.data.estado == 'disponible';
     }
 
+    // ---------- Puntos de entrega ----------
     match /puntos_entrega/{id} {
       allow read: if autenticado();
-      allow create: if esDueno(request.resource.data.donanteId);
+      allow create: if esDueno(request.resource.data.donanteId) && esDonante();
       allow update, delete: if esDueno(resource.data.donanteId);
     }
 
