@@ -44,6 +44,26 @@ void main() {
         .uid;
     dbDonante = FirebaseFirestore.instance;
     dbAsociacion = FirebaseFirestore.instanceFor(app: otra);
+
+    // Seguro: si las reglas de T36 no estan publicadas, los abusos de abajo
+    // si se guardarian y danarian las cuentas de prueba. Se prueba primero
+    // con algo inofensivo (una asociacion creando un punto de entrega).
+    try {
+      final punto = await dbAsociacion.collection('puntos_entrega').add({
+        'donanteId': asociacionId,
+        'nombre': '[prueba de reglas T36]',
+        'direccion': '',
+        'latitud': 0,
+        'longitud': 0,
+        'horario': '',
+      });
+      await punto.delete();
+      fail('Las reglas de T36 no están publicadas en Firebase. Publícalas con '
+          '"firebase deploy --only firestore:rules" desde la rama de T36 '
+          'antes de correr esta prueba.');
+    } on FirebaseException catch (e) {
+      if (e.code != 'permission-denied') rethrow;
+    }
   });
 
   tearDownAll(() => FirebaseAuth.instance.signOut());
