@@ -1,3 +1,4 @@
+import 'dart:ui' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Muestra avisos en la barra de notificaciones del telefono.
@@ -21,12 +22,17 @@ class LocalNotificacionesService implements NotificacionesService {
   final FlutterLocalNotificationsPlugin _plugin;
   bool _listo = false;
 
+  /// Silueta del logo (android/app/src/main/res/drawable), T33.
+  static const icono = 'ic_notificacion';
+
   static const _canal = AndroidNotificationDetails(
     'reservas',
     'Reservas de donaciones',
     channelDescription: 'Avisa cuando una asociación reserva tu donación',
     importance: Importance.high,
     priority: Priority.high,
+    icon: icono,
+    color: Color(0xFF1F5C50), // verde de la app
   );
 
   @override
@@ -34,7 +40,7 @@ class LocalNotificacionesService implements NotificacionesService {
     if (_listo) return;
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings(icono),
       ),
     );
     await _plugin

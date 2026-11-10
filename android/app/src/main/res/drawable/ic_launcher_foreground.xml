@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo de ReParte (T32): marcador de mapa con una hoja.
+     Dibujado en un cuadro de 100 x 100 y centrado en la zona segura
+     del icono adaptativo (108 x 108). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.7"
+        android:scaleY="0.7"
+        android:translateX="19"
+        android:translateY="17.95">
+        <path
+            android:fillColor="@color/logo_lima"
+            android:pathData="M50,90 C50,90 22,60 22,41 A28,28 0 0,1 78,41 C78,60 50,90 50,90 Z" />
+        <path
+            android:fillColor="@color/ic_launcher_background"
+            android:pathData="M50,58 C38,53 37,38 50,28 C63,38 62,53 50,58 Z" />
+        <path
+            android:strokeColor="@color/logo_lima"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:pathData="M50,57 L50,40" />
+    </group>
+</vector>

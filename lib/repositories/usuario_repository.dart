@@ -56,4 +56,8 @@ class UsuarioRepository {
   }
 
   Future<void> cerrarSesion() => _auth.cerrarSesion();
+
+  /// Pide a Firebase el correo para recuperar la contrasena.
+  Future<void> recuperarContrasena(String correo) =>
+      _auth.enviarCorreoRecuperacion(correo);
 }
