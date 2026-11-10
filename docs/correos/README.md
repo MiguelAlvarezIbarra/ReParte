@@ -14,6 +14,13 @@ plantilla para no perderla y poder volver a pegarla.
    - **Mensaje:** el contenido de [`restablecer-contrasena.html`](restablecer-contrasena.html), sin el comentario del inicio.
 3. Guarda.
 4. Abajo de la lista de plantillas, en **Idioma de la plantilla**, elige **Español**.
+   También cambia el idioma de la página donde se escribe la contraseña nueva.
+5. En **Configuración del proyecto** (engrane) → **General** → **Nombre público**,
+   escribe `ReParte`. Es lo que Firebase pone en `%APP_NAME%`; si no se llena,
+   sale algo como "project-1040694039607".
+
+La app no le pide a Firebase un idioma: si pidiera uno distinto al de la
+plantilla, Firebase ignoraría este diseño y mandaría su texto genérico.
 
 Para probarla, usa "¿Olvidaste tu contraseña?" en la app con un correo real.
 
