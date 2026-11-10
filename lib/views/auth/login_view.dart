@@ -6,6 +6,7 @@ import '../../viewmodels/login_viewmodel.dart';
 import '../../widgets/encabezado_reparte.dart';
 import '../../widgets/mensaje_error.dart';
 import '../../routes/rutas.dart';
+import 'recuperar_contrasena_view.dart';
 
 /// Pantalla de inicio de sesion.
 /// Solo muestra lo que le indica el LoginViewModel.
@@ -40,6 +41,11 @@ class _LoginViewState extends State<LoginView> {
     final vm = context.read<LoginViewModel>()..limpiarError();
     await Navigator.of(context).pushNamed(Rutas.registro);
     vm.limpiarError();
+  }
+
+  Future<void> _recuperarContrasena() {
+    context.read<LoginViewModel>().limpiarError();
+    return RecuperarContrasenaView.abrir(context, correo: _correo.text);
   }
 
   @override
@@ -93,6 +99,13 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                     validator: Validadores.contrasena,
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: vm.cargando ? null : _recuperarContrasena,
+                      child: const Text('¿Olvidaste tu contraseña?'),
+                    ),
                   ),
                   if (vm.mensajeError != null) ...[
                     const SizedBox(height: 16),

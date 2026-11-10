@@ -90,6 +90,17 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
         returnValue: _i3.Future<void>.value(),
         returnValueForMissingStub: _i3.Future<void>.value(),
       ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> enviarCorreoRecuperacion(String? correo) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #enviarCorreoRecuperacion,
+          [correo],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 }
 
 /// A class which mocks [FirestoreService].

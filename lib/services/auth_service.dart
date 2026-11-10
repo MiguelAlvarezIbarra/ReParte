@@ -48,6 +48,20 @@ class AuthService {
 
   Future<void> cerrarSesion() => _auth.signOut();
 
+  /// Envia un correo con un enlace para crear una contrasena nueva (T37).
+  /// Por seguridad Firebase no dice si el correo tiene cuenta o no.
+  ///
+  /// No se fija el idioma desde la app: si se pide uno distinto al de la
+  /// plantilla de Firebase Console, Firebase ignora el diseno de ReParte y
+  /// manda su texto generico (ver docs/correos/README.md).
+  Future<void> enviarCorreoRecuperacion(String correo) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: correo);
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(mensajeDeError(e.code));
+    }
+  }
+
   /// Traduce los codigos de Firebase a mensajes en espanol.
   static String mensajeDeError(String codigo) {
     switch (codigo) {
