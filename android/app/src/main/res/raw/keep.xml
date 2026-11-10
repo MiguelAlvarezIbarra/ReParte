@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El icono de la notificacion se pide por nombre desde Dart; esto evita que
+     la compilacion de release lo borre por creer que no se usa (T33). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notificacion" />
