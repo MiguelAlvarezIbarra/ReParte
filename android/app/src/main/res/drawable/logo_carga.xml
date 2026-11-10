@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo de la pantalla de carga (T32): el icono de la app, cuadro verde
+     redondeado con el marcador y la hoja. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:fillColor="@color/ic_launcher_background"
+        android:pathData="M23,0 L77,0 A23,23 0 0,1 100,23 L100,77 A23,23 0 0,1 77,100 L23,100 A23,23 0 0,1 0,77 L0,23 A23,23 0 0,1 23,0 Z" />
+    <group
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:translateX="10"
+        android:translateY="8">
+        <path
+            android:fillColor="@color/logo_lima"
+            android:pathData="M50,90 C50,90 22,60 22,41 A28,28 0 0,1 78,41 C78,60 50,90 50,90 Z" />
+        <path
+            android:fillColor="@color/ic_launcher_background"
+            android:pathData="M50,58 C38,53 37,38 50,28 C63,38 62,53 50,58 Z" />
+        <path
+            android:strokeColor="@color/logo_lima"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:pathData="M50,57 L50,40" />
+    </group>
+</vector>

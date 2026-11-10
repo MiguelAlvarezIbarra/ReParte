@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores del logo de ReParte (T32), los mismos de TemaApp -->
+    <color name="ic_launcher_background">#1F5C50</color>
+    <color name="logo_lima">#D9F26B</color>
+    <color name="fondo_carga">#FAF5EC</color>
+</resources>
