@@ -18,7 +18,8 @@ comida en buen estado.
 Lo que ya funciona:
 
 - **Cuentas:** registro con correo y contraseña eligiendo el rol (**donante** o
-  **asociación**), inicio de sesión, sesión que se mantiene y perfil.
+  **asociación**), inicio de sesión, sesión que se mantiene, perfil y
+  **recuperar la contraseña** por correo.
 - **Donante:** publica una donación con descripción, kilos, fecha de caducidad y
   punto de entrega elegido en el mapa; ve *Mis donaciones* con su estado
   (activas e historial).
@@ -34,13 +35,18 @@ Lo que ya funciona:
   (distancia y tiempo) o la abre en la app de mapas del teléfono.
 - **Sin conexión:** avisa cuando el teléfono se queda sin red, muestra lo último
   guardado y permite reintentar cuando algo no carga.
-- Base de datos en Cloud Firestore protegida con reglas de seguridad.
+- **Logo de ReParte** en el ícono de la app, la pantalla de carga, el inicio de
+  sesión y las notificaciones.
+- **Seguridad:** las reglas de Cloud Firestore exigen sesión, no dejan cambiar el
+  rol, permiten publicar solo a donantes y reservar solo a asociaciones, validan
+  los datos y protegen el ciclo de la donación (disponible → reservada → entregada).
 
 Con esto queda completo el ciclo de una donación (historias H1 a H6), probado de
 principio a fin en un teléfono real: ver [la prueba del flujo completo](docs/pruebas/flujo-completo.md).
 
-Pendiente del cierre: corregir lo detectado en las pruebas (T26), APK de release
-(T27), guion de la demostración (T28) y README con capturas (T29).
+Pendiente: foto de la donación al publicar (T34) y guardarla en la nube (T35),
+corregir lo detectado en las pruebas (T26), APK de release (T27), guion de la
+demostración (T28) y README con capturas (T29).
 
 ## Equipo
 
@@ -84,6 +90,11 @@ La app ya está conectada al proyecto de Firebase `reparte-a3c07`
 (`android/app/google-services.json` y `lib/firebase_options.dart`).
 La primera compilación tarda bastante porque descarga Gradle 8.14 y el NDK de Android.
 
+Las reglas de seguridad están en `firestore.rules`. Si se cambian, se publican con
+`firebase deploy --only firestore:rules --project reparte-a3c07`. El diseño del
+correo de recuperación de contraseña se configura en Firebase Console: los pasos
+están en [docs/correos](docs/correos/README.md).
+
 ### Cuentas de prueba
 
 | Rol | Correo | Contraseña |
@@ -99,13 +110,17 @@ flutter test                    # pruebas unitarias y de widgets
 flutter test integration_test   # contra Firebase real, con un teléfono conectado
 
 # flujo completo H1 a H6 en el teléfono, guardando capturas en docs/pruebas/capturas
-flutter drive --driver=test_driver/integration_test.dart   --target=integration_test/flujo_completo_test.dart
+flutter drive --driver=test_driver/integration_test.dart \
+  --target=integration_test/flujo_completo_test.dart
 ```
 
-Estado actual en `main`: `flutter analyze` sin problemas, **190 pruebas
-aprobadas** y las pruebas de integración aprobadas en un Samsung A51 con
-Android 13. Entre ellas está el **flujo completo de las seis historias**, con
-13 capturas como evidencia en [docs/pruebas/flujo-completo.md](docs/pruebas/flujo-completo.md).
+Estado actual en `main`: `flutter analyze` sin problemas, **201 pruebas
+aprobadas** y **9 pruebas de integración** aprobadas en un Samsung A51 con
+Android 13 (y en un Redmi Note 13 Pro con Android 16). Entre ellas están el
+**flujo completo de las seis historias**, con 13 capturas como evidencia en
+[docs/pruebas/flujo-completo.md](docs/pruebas/flujo-completo.md), y la **prueba
+de seguridad**, que intenta escribir en Firestore lo que no se debe (cambiarse el
+rol, publicar con 0 kilos, reservar siendo donante…) y comprueba que se rechace.
 
 Ojo: `flutter test integration_test` reemplaza el APK de depuración por uno de
 prueba. Para probar la app a mano después, usa `flutter run`.
@@ -114,11 +129,11 @@ prueba. Para probar la app a mano después, usa `flutter run`.
 |---|---|
 | `test/models/` | Conversión desde y hacia JSON y validaciones de los modelos |
 | `test/repositories/` | Repositorios con Firestore simulado (mockito): guardar, consultar, reservar, doble reserva, entregar y fallas |
-| `test/viewmodels/` | Inicio de sesión, lista y búsqueda, detalle, reserva y entrega, publicar, mapa, ruta, *Mis donaciones* y avisos de reserva |
-| `test/views/` | Pantallas: acceso, navegación por rol, barra inferior, lista, detalle, reservar, entregar, publicar, errores y sin conexión |
+| `test/viewmodels/` | Inicio de sesión, recuperar contraseña, lista y búsqueda, detalle, reserva y entrega, publicar, mapa, ruta, *Mis donaciones* y avisos de reserva |
+| `test/views/` | Pantallas: acceso, recuperar contraseña, logo, navegación por rol, barra inferior, lista, detalle, reservar, entregar, publicar, errores y sin conexión |
 | `test/services/` | Ubicación y cálculo de la ruta |
 | `test/core/` | Validadores y formatos |
-| `integration_test/` | Contra Firebase real: inicio de sesión, publicar, reservar, doble reserva, entregar y el flujo completo H1 a H6 |
+| `integration_test/` | Contra Firebase real: inicio de sesión, publicar, reservar, doble reserva, entregar, el flujo completo H1 a H6 y las reglas de seguridad |
 
 ## Arquitectura
 
@@ -153,6 +168,7 @@ lib/
 └── routes/         Nombres de las rutas de navegación
 assets/fonts/       Tipografía Poppins
 docs/pruebas/       Resultados y capturas de la prueba del flujo completo
+docs/correos/       Plantilla del correo para recuperar la contraseña
 integration_test/   Pruebas contra Firebase real en un teléfono
 test_driver/        Guarda las capturas de las pruebas en el teléfono
 firestore.rules     Reglas de seguridad de Firestore
