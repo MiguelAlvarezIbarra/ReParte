@@ -13,6 +13,7 @@ comida en buen estado.
 | Repositorio | <https://github.com/MiguelAlvarezIbarra/ReParte> (público) |
 | Rama a revisar | **`main`**: versión estable. El trabajo diario va en `develop` y en ramas `feature/Txx` |
 | Seguridad | [docs/SEGURIDAD.md](docs/SEGURIDAD.md): secretos, controles y dependencias |
+| Reportar un problema de seguridad | [SECURITY.md](SECURITY.md): en privado, nunca en un issue público |
 | Servicios en la nube | [Servicios en la nube y API](#servicios-en-la-nube-y-api), en este README |
 | Pruebas de seguridad | [docs/pruebas/seguridad.md](docs/pruebas/seguridad.md), con resultados |
 | Prueba del flujo completo | [docs/pruebas/flujo-completo.md](docs/pruebas/flujo-completo.md), con capturas |
