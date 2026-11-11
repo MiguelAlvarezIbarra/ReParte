@@ -76,6 +76,9 @@ reservó. Sin sesión no se puede leer ningún perfil.
     avisará si alguna versión de las que usamos tiene un problema de seguridad.
 - **Dependabot** ([`.github/dependabot.yml`](../.github/dependabot.yml)) revisa
   cada semana los paquetes de Dart, Gradle y GitHub Actions.
+- En GitHub están activados **Dependabot alerts**, **Dependabot security
+  updates**, **Secret scanning** y **Push protection** (Settings → Advanced
+  Security). Al 10 nov 2026 hay **0 alertas de Dependabot abiertas**.
 - **GitHub Actions** ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml))
   corre `flutter analyze`, `flutter test` y `flutter pub outdated` en cada PR
   hacia `develop` y `main`.

@@ -170,12 +170,15 @@ flutter drive --driver=test_driver/integration_test.dart \
 ```
 
 Estado actual en `main`: `flutter analyze` sin problemas, **201 pruebas
-aprobadas** y **9 pruebas de integración** aprobadas en un Samsung A51 con
-Android 13 (y en un Redmi Note 13 Pro con Android 16). Entre ellas están el
+aprobadas** y **10 pruebas de integración** aprobadas en un Redmi Note 13 Pro
+con Android 16 (las 9 anteriores también en un Samsung A51 con Android 13). GitHub Actions corre el
+análisis y las pruebas unitarias en cada PR. Entre ellas están el
 **flujo completo de las seis historias**, con 13 capturas como evidencia en
 [docs/pruebas/flujo-completo.md](docs/pruebas/flujo-completo.md), y la **prueba
 de seguridad**, que intenta escribir en Firestore lo que no se debe (cambiarse el
-rol, publicar con 0 kilos, reservar siendo donante…) y comprueba que se rechace.
+rol, publicar con 0 kilos, reservar siendo donante, leer sin sesión…) y
+comprueba que se rechace. Resultados caso por caso en
+[docs/pruebas/seguridad.md](docs/pruebas/seguridad.md).
 
 Ojo: `flutter test integration_test` reemplaza el APK de depuración por uno de
 prueba. Para probar la app a mano después, usa `flutter run`.
