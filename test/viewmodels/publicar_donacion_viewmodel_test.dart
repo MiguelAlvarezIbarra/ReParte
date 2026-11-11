@@ -1,13 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reparte/services/selector_foto_service.dart';
 import 'package:reparte/viewmodels/estado_ui.dart';
 import 'package:reparte/viewmodels/publicar_donacion_viewmodel.dart';
 
 import '../fakes/donacion_repository_falso.dart';
+import '../fakes/selector_foto_service_falso.dart';
 import '../fakes/ubicacion_service_falso.dart';
 
 void main() {
   late DonacionRepositoryFalso repo;
   late UbicacionServiceFalso ubicacionService;
+  late SelectorFotoServiceFalso selectorFoto;
   late PublicarDonacionViewModel vm;
   final manana = DateTime.now().add(const Duration(days: 1));
   final ayer = DateTime.now().subtract(const Duration(days: 1));
@@ -15,10 +18,12 @@ void main() {
   setUp(() {
     repo = DonacionRepositoryFalso();
     ubicacionService = UbicacionServiceFalso();
+    selectorFoto = SelectorFotoServiceFalso();
     vm = PublicarDonacionViewModel(
       repo,
       donanteId: 'd1',
       ubicacionService: ubicacionService,
+      selectorFotoService: selectorFoto,
     );
   });
 
@@ -228,6 +233,70 @@ void main() {
     });
   });
 
+  group('foto de la donacion (T34)', () {
+    test('tomarFoto pide la foto a la camara y la guarda en el ViewModel',
+        () async {
+      expect(vm.tieneFoto, isFalse);
+
+      final foto = await vm.tomarFoto();
+
+      expect(selectorFoto.llamadasCamara, 1);
+      expect(selectorFoto.ultimoOrigen, OrigenFoto.camara);
+      expect(foto, '/tmp/foto_donacion_reducida.jpg');
+      expect(vm.fotoUrl, '/tmp/foto_donacion_reducida.jpg');
+      expect(vm.tieneFoto, isTrue);
+      expect(vm.seleccionandoFoto, isFalse);
+      expect(vm.mensajeError, isNull);
+    });
+
+    test('elegirFotoDeGaleria pide la foto a la galeria y la guarda', () async {
+      selectorFoto.rutaDevuelta = '/tmp/desde_galeria.jpg';
+
+      final foto = await vm.elegirFotoDeGaleria();
+
+      expect(selectorFoto.llamadasGaleria, 1);
+      expect(selectorFoto.ultimoOrigen, OrigenFoto.galeria);
+      expect(foto, '/tmp/desde_galeria.jpg');
+      expect(vm.fotoUrl, '/tmp/desde_galeria.jpg');
+      expect(vm.tieneFoto, isTrue);
+    });
+
+    test('si el usuario cancela la camara conserva la foto anterior sin error',
+        () async {
+      vm.fijarFoto('/tmp/foto_previa.jpg');
+      selectorFoto.rutaDevuelta = null;
+
+      await vm.tomarFoto();
+
+      expect(vm.fotoUrl, '/tmp/foto_previa.jpg');
+      expect(vm.tieneFoto, isTrue);
+      expect(vm.mensajeError, isNull);
+    });
+
+    test('quitarFoto limpia la foto seleccionada y avisa a los oyentes', () {
+      vm.fijarFoto('/tmp/foto_previa.jpg');
+      var notificado = false;
+      vm.addListener(() => notificado = true);
+
+      vm.quitarFoto();
+
+      expect(vm.fotoUrl, isNull);
+      expect(vm.tieneFoto, isFalse);
+      expect(notificado, isTrue);
+    });
+
+    test('si falla el selector de foto reporta error y apaga cargando',
+        () async {
+      selectorFoto.lanzarError = true;
+
+      final res = await vm.tomarFoto();
+
+      expect(res, isNull);
+      expect(vm.seleccionandoFoto, isFalse);
+      expect(vm.mensajeError, contains('No se pudo obtener la foto'));
+    });
+  });
+
   group('publicar', () {
     Future<bool> publicarValida({double lat = 21.1561, double lng = -100.9346}) =>
         vm.publicar(
@@ -257,6 +326,19 @@ void main() {
       expect(donacion.descripcion, '20 panes del dia');
       expect(donacion.cantidadKg, 2.5);
       expect(donacion.puntoEntregaId, 'p1');
+      expect(donacion.fotoUrl, isNull);
+    });
+
+    test('guarda la foto tomada en la donacion al publicar (criterio T34)',
+        () async {
+      await vm.tomarFoto();
+
+      final ok = await publicarValida();
+
+      expect(ok, isTrue);
+      final donacion = repo.creadas.single;
+      expect(donacion.tieneFoto, isTrue);
+      expect(donacion.fotoUrl, '/tmp/foto_donacion_reducida.jpg');
     });
 
     test('pasa por cargando antes de quedar publicada', () async {

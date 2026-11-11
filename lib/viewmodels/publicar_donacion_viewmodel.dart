@@ -3,6 +3,7 @@ import '../core/utilidades/validadores.dart';
 import '../models/donacion.dart';
 import '../models/punto_entrega.dart';
 import '../repositories/donacion_repository.dart';
+import '../services/selector_foto_service.dart';
 import '../services/ubicacion_service.dart';
 import 'estado_ui.dart';
 
@@ -16,6 +17,7 @@ class DatosDonacion {
     required this.puntoDireccion,
     this.latitud = 0,
     this.longitud = 0,
+    this.fotoUrl,
   });
 
   final String descripcion;
@@ -27,20 +29,27 @@ class DatosDonacion {
   final String puntoDireccion;
   final double latitud;
   final double longitud;
+  final String? fotoUrl;
 }
 
 /// Cerebro del formulario de publicar donacion: no sabe nada de widgets.
-/// Valida lo capturado, maneja la ubicación/GPS y lo guarda en el repositorio.
+/// Valida lo capturado, maneja la foto (T34), la ubicación/GPS (T15)
+/// y lo guarda en el repositorio.
 class PublicarDonacionViewModel extends ChangeNotifier {
   PublicarDonacionViewModel(
     this._repo, {
     required this.donanteId,
     UbicacionService? ubicacionService,
-  }) : _ubicacionService = ubicacionService ?? const GeolocatorUbicacionService();
+    SelectorFotoService? selectorFotoService,
+  })  : _ubicacionService =
+            ubicacionService ?? const GeolocatorUbicacionService(),
+        _selectorFoto =
+            selectorFotoService ?? const ImagePickerSelectorFotoService();
 
   final DonacionRepository _repo;
   final String donanteId;
   final UbicacionService _ubicacionService;
+  final SelectorFotoService _selectorFoto;
 
   EstadoUI estado = EstadoUI.inicial;
   DatosDonacion? borrador;
@@ -50,14 +59,56 @@ class PublicarDonacionViewModel extends ChangeNotifier {
   double? longitud;
   bool obteniendoUbicacion = false;
 
+  String? fotoUrl;
+  bool seleccionandoFoto = false;
+
   bool get publicando => estado == EstadoUI.cargando;
   bool get tieneCoordenadas =>
       latitud != null && longitud != null && (latitud != 0 || longitud != 0);
+  bool get tieneFoto => fotoUrl != null && fotoUrl!.trim().isNotEmpty;
+
+  /// Toma una foto con la cámara (reducida de tamaño) y la fija en el formulario (T34).
+  Future<String?> tomarFoto() => seleccionarFoto(OrigenFoto.camara);
+
+  /// Elige una foto de la galería (reducida de tamaño) y la fija en el formulario (T34).
+  Future<String?> elegirFotoDeGaleria() => seleccionarFoto(OrigenFoto.galeria);
+
+  /// Obtiene una foto desde [origen] usando [SelectorFotoService].
+  /// Si el usuario cancela, conserva la foto anterior sin mostrar error.
+  Future<String?> seleccionarFoto(OrigenFoto origen) async {
+    seleccionandoFoto = true;
+    notifyListeners();
+    try {
+      final ruta = await _selectorFoto.seleccionarFoto(origen);
+      if (ruta != null && ruta.trim().isNotEmpty) {
+        fotoUrl = ruta.trim();
+        mensajeError = null;
+      }
+      return fotoUrl;
+    } catch (_) {
+      mensajeError = 'No se pudo obtener la foto. Intenta de nuevo.';
+      return null;
+    } finally {
+      seleccionandoFoto = false;
+      notifyListeners();
+    }
+  }
+
+  /// Fija o reemplaza la ruta/URL de la foto manualmente.
+  void fijarFoto(String? ruta) {
+    final limpia = ruta?.trim();
+    fotoUrl = (limpia == null || limpia.isEmpty) ? null : limpia;
+    notifyListeners();
+  }
+
+  /// Quita la foto seleccionada del formulario.
+  void quitarFoto() => fijarFoto(null);
 
   /// Fija manualmente las coordenadas seleccionadas en el mapa.
   void fijarUbicacion({required double lat, required double lng}) {
     latitud = lat;
     longitud = lng;
+    mensajeError = null;
     notifyListeners();
   }
 
@@ -97,7 +148,7 @@ class PublicarDonacionViewModel extends ChangeNotifier {
     }
   }
 
-  /// Valida y guarda la donacion con su punto de entrega y coordenadas.
+  /// Valida y guarda la donacion con su punto de entrega, coordenadas y foto.
   /// Devuelve true si quedo publicada; si no, deja el motivo en [mensajeError].
   Future<bool> publicar({
     required String descripcion,
@@ -107,10 +158,12 @@ class PublicarDonacionViewModel extends ChangeNotifier {
     required String puntoDireccion,
     double? latitud,
     double? longitud,
+    String? fotoUrl,
   }) async {
     if (publicando) return false;
     final lat = latitud ?? this.latitud ?? 0;
     final lng = longitud ?? this.longitud ?? 0;
+    final foto = fotoUrl ?? this.fotoUrl;
 
     final valido = _validar(
       descripcion: descripcion,
@@ -120,6 +173,7 @@ class PublicarDonacionViewModel extends ChangeNotifier {
       puntoDireccion: puntoDireccion,
       latitud: lat,
       longitud: lng,
+      fotoUrl: foto,
     );
     if (!valido) {
       estado = EstadoUI.error;
@@ -147,6 +201,7 @@ class PublicarDonacionViewModel extends ChangeNotifier {
         caducidad: datos.caducidad,
         puntoEntregaId: puntoId,
         creadaEn: DateTime.now(),
+        fotoUrl: datos.fotoUrl,
       ));
       estado = EstadoUI.listo;
       notifyListeners();
@@ -175,6 +230,7 @@ class PublicarDonacionViewModel extends ChangeNotifier {
     required String puntoDireccion,
     double? latitud,
     double? longitud,
+    String? fotoUrl,
   }) {
     final ok = _validar(
       descripcion: descripcion,
@@ -184,6 +240,7 @@ class PublicarDonacionViewModel extends ChangeNotifier {
       puntoDireccion: puntoDireccion,
       latitud: latitud ?? this.latitud ?? 0,
       longitud: longitud ?? this.longitud ?? 0,
+      fotoUrl: fotoUrl ?? this.fotoUrl,
     );
     notifyListeners();
     return ok;
@@ -198,6 +255,7 @@ class PublicarDonacionViewModel extends ChangeNotifier {
     required String puntoDireccion,
     double latitud = 0,
     double longitud = 0,
+    String? fotoUrl,
   }) {
     final error = Validadores.obligatorio(
             donanteId, 'Identificador de donante inválido') ??
@@ -216,6 +274,7 @@ class PublicarDonacionViewModel extends ChangeNotifier {
     }
 
     final fecha = fechaCaducidad!;
+    final fotoLimpia = fotoUrl?.trim();
     borrador = DatosDonacion(
       descripcion: descripcion.trim(),
       cantidadKg: Validadores.parsearCantidad(cantidad)!,
@@ -224,6 +283,7 @@ class PublicarDonacionViewModel extends ChangeNotifier {
       puntoDireccion: puntoDireccion.trim(),
       latitud: latitud,
       longitud: longitud,
+      fotoUrl: (fotoLimpia == null || fotoLimpia.isEmpty) ? null : fotoLimpia,
     );
     mensajeError = null;
     return true;

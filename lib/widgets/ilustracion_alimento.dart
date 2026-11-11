@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'imagen_donacion.dart';
 
-/// Cuadro de color con un icono segun el tipo de comida.
-/// Sustituye a las fotos mientras no se suban imagenes de las donaciones.
+/// Cuadro de color con la foto de la donacion o un icono segun el tipo de comida.
+/// Si la donacion no tiene foto, muestra el dibujo del tipo de alimento (T34).
 class IlustracionAlimento extends StatelessWidget {
   const IlustracionAlimento({
     super.key,
@@ -9,6 +10,7 @@ class IlustracionAlimento extends StatelessWidget {
     this.tamano = 92,
     this.radio = 16,
     this.etiqueta,
+    this.fotoUrl,
   });
 
   final String descripcion;
@@ -17,6 +19,9 @@ class IlustracionAlimento extends StatelessWidget {
 
   /// Texto en la esquina, por ejemplo los kilos.
   final String? etiqueta;
+
+  /// Ruta o enlace de la foto de la donacion (T34); null si no tiene.
+  final String? fotoUrl;
 
   /// Colores e icono que corresponden a la descripcion de la comida.
   static ({Color fondo, Color trazo, IconData icono}) estilo(String texto) {
@@ -64,16 +69,24 @@ class IlustracionAlimento extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = estilo(descripcion);
+    final dibujo = Center(
+      child: Icon(e.icono, size: tamano * 0.48, color: e.trazo),
+    );
     return Container(
       width: tamano,
       height: tamano,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: e.fondo,
         borderRadius: BorderRadius.circular(radio),
       ),
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Center(child: Icon(e.icono, size: tamano * 0.48, color: e.trazo)),
+          ImagenDonacion(
+            fotoUrl: fotoUrl,
+            respaldo: dibujo,
+          ),
           if (etiqueta != null)
             Positioned(
               top: 6,

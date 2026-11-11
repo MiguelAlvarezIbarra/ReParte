@@ -10,6 +10,7 @@ import '../../widgets/etiqueta.dart';
 import '../../widgets/boton_como_llegar.dart';
 import '../../widgets/boton_ver_ruta.dart';
 import '../../widgets/ilustracion_alimento.dart';
+import '../../widgets/imagen_donacion.dart';
 import '../../widgets/mensaje_error.dart';
 import 'reserva_confirmada_view.dart';
 
@@ -67,7 +68,12 @@ class DetalleDonacionView extends StatelessWidget {
             Container(
               height: 180,
               color: estilo.fondo,
-              child: Icon(estilo.icono, size: 104, color: estilo.trazo),
+              child: ImagenDonacion(
+                fotoUrl: donacion.fotoUrl,
+                respaldo: Center(
+                  child: Icon(estilo.icono, size: 104, color: estilo.trazo),
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
