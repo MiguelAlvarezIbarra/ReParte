@@ -1,0 +1,41 @@
+# Revisa cada cambio antes de fusionarlo (T38): analisis estatico,
+# pruebas unitarias y de pantallas, y estado de las dependencias.
+# No usa secretos: las pruebas contra Firebase real se corren a mano en un
+# telefono (ver docs/pruebas/seguridad.md).
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+# Permisos minimos: el flujo solo lee el codigo.
+permissions:
+  contents: read
+
+jobs:
+  analisis-y-pruebas:
+    name: Analisis y pruebas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.9
+          channel: stable
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Analisis estatico
+        run: flutter analyze
+
+      - name: Pruebas unitarias y de pantallas
+        run: flutter test
+
+      - name: Dependencias desactualizadas (informativo)
+        run: flutter pub outdated --no-dev-dependencies || true

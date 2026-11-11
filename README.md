@@ -6,6 +6,21 @@ Aplicación móvil que conecta a restaurantes y supermercados con
 asociaciones que reparten alimentos, para reducir el desperdicio de
 comida en buen estado.
 
+## Para revisar este repositorio
+
+| | |
+|---|---|
+| Repositorio | <https://github.com/MiguelAlvarezIbarra/ReParte> (público) |
+| Rama a revisar | **`main`**: versión estable. El trabajo diario va en `develop` y en ramas `feature/Txx` |
+| Seguridad | [docs/SEGURIDAD.md](docs/SEGURIDAD.md): secretos, controles y dependencias |
+| Reportar un problema de seguridad | [SECURITY.md](SECURITY.md): en privado, nunca en un issue público |
+| Servicios en la nube | [Servicios en la nube y API](#servicios-en-la-nube-y-api), en este README |
+| Pruebas de seguridad | [docs/pruebas/seguridad.md](docs/pruebas/seguridad.md), con resultados |
+| Prueba del flujo completo | [docs/pruebas/flujo-completo.md](docs/pruebas/flujo-completo.md), con capturas |
+
+En el repositorio **no hay secretos**. La configuración de Firebase que está
+versionada son identificadores públicos (ver [Configuración y secretos](#configuración-y-secretos)).
+
 ## Estado del proyecto
 
 | Sprint | Fechas | Estado |
@@ -73,9 +88,36 @@ demostración (T28) y README con capturas (T29).
 | Tipografía | Poppins (incluida en `assets/fonts`, licencia OFL) |
 | Pruebas | `flutter_test`, `mockito`, `integration_test` |
 
-Los avisos al donante se muestran con notificaciones del teléfono mientras la app
-está abierta o en segundo plano. Para avisar con la app totalmente cerrada haría
-falta Cloud Functions con Firebase Cloud Messaging, que requiere el plan Blaze.
+## Servicios en la nube y API
+
+```mermaid
+flowchart LR
+  App["App ReParte<br/>(Flutter, Android)"]
+  Auth["Firebase Authentication"]
+  DB["Cloud Firestore<br/>+ reglas de seguridad"]
+  OSM["Mapas de OpenStreetMap"]
+  OSRM["OSRM (rutas)"]
+  GM["App de mapas del teléfono"]
+  App -- "correo y contraseña (HTTPS)" --> Auth
+  Auth -- "sesión (token)" --> App
+  App -- "lecturas y escrituras con el token (HTTPS)" --> DB
+  App -- "zona del mapa visible (HTTPS)" --> OSM
+  App -- "origen y destino (HTTPS)" --> OSRM
+  App -- "destino" --> GM
+```
+
+| Servicio | Para qué | Datos que intercambia | Configuración | Límites de acceso |
+|---|---|---|---|---|
+| **Firebase Authentication** | Cuentas, inicio de sesión y recuperar contraseña | Envía correo y contraseña; recibe el id del usuario y un token de sesión. Firebase manda el correo de recuperación | `google-services.json` y `firebase_options.dart` (públicos). Plantilla del correo: [docs/correos](docs/correos/README.md) | Solo correo y contraseña. Contraseñas de al menos 6 caracteres |
+| **Cloud Firestore** | Base de datos en tiempo real | `usuarios` (nombre, correo, rol, teléfono), `donaciones` (descripción, kilos, caducidad, estado, quién publica y quién reserva) y `puntos_entrega` (nombre, dirección, coordenadas, horario) | Las mismas claves públicas; reglas en [`firestore.rules`](firestore.rules) | Sin sesión no se lee ni escribe nada. Cada rol solo hace lo suyo (ver [docs/SEGURIDAD.md](docs/SEGURIDAD.md)) |
+| **OpenStreetMap** (`flutter_map`) | Dibujar los mapas | Las coordenadas de la zona visible del mapa; la app se identifica como `com.reparte.reparte` | Sin clave | Política de uso de los mapas de OpenStreetMap |
+| **OSRM** (servidor público) | Calcular la ruta dentro de la app | Coordenadas de origen (ubicación del usuario) y destino | Sin clave ([`rutas_service.dart`](lib/services/rutas_service.dart)) | Servidor de demostración: pocas consultas por segundo; si falla, la app muestra un mensaje y ofrece abrir la app de mapas |
+| **App de mapas del teléfono** (`url_launcher`) | "Cómo llegar" paso a paso | Coordenadas del punto de entrega | Sin clave | Lo abre el usuario con un botón |
+| **Geocodificación del teléfono** (`geocoding`) | Convertir coordenadas en dirección | Coordenadas elegidas en el mapa | Sin clave (servicio del sistema Android) | Solo al elegir el punto de entrega |
+| **Notificaciones locales** (`flutter_local_notifications`) | Avisar al donante cuando reservan su donación | Ninguno: se generan en el teléfono a partir de los cambios de Firestore | Permiso de notificaciones de Android | Funciona con la app abierta o en segundo plano |
+
+Para avisar con la app totalmente cerrada haría falta Cloud Functions con
+Firebase Cloud Messaging, que requiere el plan Blaze de Firebase.
 
 ## Cómo ejecutarlo
 
@@ -95,32 +137,49 @@ Las reglas de seguridad están en `firestore.rules`. Si se cambian, se publican 
 correo de recuperación de contraseña se configura en Firebase Console: los pasos
 están en [docs/correos](docs/correos/README.md).
 
-### Cuentas de prueba
+### Configuración y secretos
 
-| Rol | Correo | Contraseña |
+| Archivo | ¿Va en el repositorio? | Qué contiene |
 |---|---|---|
-| Donante | `prueba.donante@reparte.mx` | `reparte123` |
-| Asociación | `prueba.asociacion@reparte.mx` | `reparte123` |
+| `android/app/google-services.json`, `lib/firebase_options.dart` | Sí | Identificadores **públicos** del proyecto de Firebase (`apiKey`, `appId`, `projectId`). Firebase los diseña para ir dentro de la app; no dan acceso a los datos. Lo que protege la información son Firebase Authentication y las reglas de [`firestore.rules`](firestore.rules) |
+| `pruebas.env.json` | **No** (en `.gitignore`) | Cuentas de prueba para las pruebas contra Firebase real |
+| [`pruebas.env.example.json`](pruebas.env.example.json) | Sí | Ejemplo con valores **ficticios** (`TU_CONTRASENA_AQUI`) |
+| `key.properties`, `*.jks` | **No** (en `.gitignore`) | Llave para firmar el APK de release |
+
+Para correr las pruebas contra Firebase real:
+
+1. Copia `pruebas.env.example.json` como `pruebas.env.json`.
+2. Llena los valores con las cuentas de prueba, que el equipo comparte por un
+   canal privado (nunca en el repositorio ni en issues).
+3. Ejecuta las pruebas con `--dart-define-from-file=pruebas.env.json`.
+
+Para usar otro proyecto de Firebase: crea el proyecto, activa Authentication
+(correo y contraseña) y Firestore, ejecuta `flutterfire configure` (regenera los
+dos archivos públicos) y publica las reglas.
 
 ## Pruebas
 
 ```bash
 flutter analyze                 # análisis estático
 flutter test                    # pruebas unitarias y de widgets
-flutter test integration_test   # contra Firebase real, con un teléfono conectado
+flutter test integration_test --dart-define-from-file=pruebas.env.json   # Firebase real, con teléfono
 
 # flujo completo H1 a H6 en el teléfono, guardando capturas en docs/pruebas/capturas
 flutter drive --driver=test_driver/integration_test.dart \
-  --target=integration_test/flujo_completo_test.dart
+  --target=integration_test/flujo_completo_test.dart \
+  --dart-define-from-file=pruebas.env.json
 ```
 
 Estado actual en `main`: `flutter analyze` sin problemas, **201 pruebas
-aprobadas** y **9 pruebas de integración** aprobadas en un Samsung A51 con
-Android 13 (y en un Redmi Note 13 Pro con Android 16). Entre ellas están el
+aprobadas** y **10 pruebas de integración** aprobadas en un Redmi Note 13 Pro
+con Android 16 (las 9 anteriores también en un Samsung A51 con Android 13). GitHub Actions corre el
+análisis y las pruebas unitarias en cada PR. Entre ellas están el
 **flujo completo de las seis historias**, con 13 capturas como evidencia en
 [docs/pruebas/flujo-completo.md](docs/pruebas/flujo-completo.md), y la **prueba
 de seguridad**, que intenta escribir en Firestore lo que no se debe (cambiarse el
-rol, publicar con 0 kilos, reservar siendo donante…) y comprueba que se rechace.
+rol, publicar con 0 kilos, reservar siendo donante, leer sin sesión…) y
+comprueba que se rechace. Resultados caso por caso en
+[docs/pruebas/seguridad.md](docs/pruebas/seguridad.md).
 
 Ojo: `flutter test integration_test` reemplaza el APK de depuración por uno de
 prueba. Para probar la app a mano después, usa `flutter run`.
@@ -167,11 +226,14 @@ lib/
 ├── widgets/        Componentes reutilizables (tarjetas, etiquetas, encabezados)
 └── routes/         Nombres de las rutas de navegación
 assets/fonts/       Tipografía Poppins
-docs/pruebas/       Resultados y capturas de la prueba del flujo completo
+docs/SEGURIDAD.md   Controles de seguridad, secretos y dependencias
+docs/pruebas/       Resultados de las pruebas de seguridad y del flujo completo, con capturas
 docs/correos/       Plantilla del correo para recuperar la contraseña
-integration_test/   Pruebas contra Firebase real en un teléfono
+integration_test/   Pruebas contra Firebase real en un teléfono (incluye las de seguridad)
 test_driver/        Guarda las capturas de las pruebas en el teléfono
-firestore.rules     Reglas de seguridad de Firestore
+.github/            GitHub Actions (análisis y pruebas en cada PR) y Dependabot
+firestore.rules     Reglas de seguridad de Firestore (autorización en el servidor)
+pruebas.env.example.json  Ejemplo con valores ficticios de las cuentas de prueba
 ```
 
 ## Flujo de trabajo

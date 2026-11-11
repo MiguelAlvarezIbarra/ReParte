@@ -11,6 +11,8 @@ import 'package:reparte/services/auth_service.dart';
 import 'package:reparte/services/firestore_service.dart';
 import 'package:reparte/services/notificaciones_service.dart';
 
+import 'cuentas_prueba.dart';
+
 /// T25: recorre las seis historias del PMV (H1 a H6) en un telefono real,
 /// tocando la app como lo haria una persona, contra Firebase real.
 ///
@@ -20,11 +22,11 @@ import 'package:reparte/services/notificaciones_service.dart';
 /// cuenta de la asociacion.
 ///
 /// Con capturas de pantalla (se guardan en docs/pruebas/capturas):
-///   flutter drive --driver=test_driver/integration_test.dart
+///   flutter drive --driver=test_driver/integration_test.dart --dart-define-from-file=pruebas.env.json
 ///     --target=integration_test/flujo_completo_test.dart
-const _donante = 'prueba.donante@reparte.mx';
-const _asociacion = 'prueba.asociacion@reparte.mx';
-const _contrasena = 'reparte123';
+const _donante = CuentasPrueba.correoDonante;
+const _asociacion = CuentasPrueba.correoAsociacion;
+const _contrasena = CuentasPrueba.contrasena;
 
 /// Usa las notificaciones reales y ademas anota cuales se mostraron.
 class _NotificacionesAnotadas implements NotificacionesService {
@@ -49,6 +51,7 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('flujo completo de una donacion, de H1 a H6', (tester) async {
+    CuentasPrueba.verificar();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );

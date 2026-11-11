@@ -22,8 +22,12 @@ Para repetirla, con el teléfono conectado:
 
 ```bash
 flutter drive --driver=test_driver/integration_test.dart \
-  --target=integration_test/flujo_completo_test.dart
+  --target=integration_test/flujo_completo_test.dart \
+  --dart-define-from-file=pruebas.env.json
 ```
+
+Las cuentas de prueba se leen de `pruebas.env.json`, que no está en el
+repositorio (ver [Configuración y secretos](../../README.md#configuración-y-secretos)).
 
 Las capturas se guardan en [`docs/pruebas/capturas`](capturas). Cada ejecución publica dos donaciones con una marca nueva (por ejemplo `T25-13476`) y al final las deja entregadas, así que no quedan donaciones de prueba disponibles para las asociaciones.
 
