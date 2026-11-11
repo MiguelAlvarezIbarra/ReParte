@@ -5,13 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:reparte/firebase_options.dart';
 
+import 'cuentas_prueba.dart';
+
 /// T36: comprueba contra Firebase real que las reglas de seguridad
 /// rechazan lo que no se debe poder hacer, escribiendo directo en
 /// Firestore como lo haria alguien que se salta la app.
 ///
 /// Se usan dos conexiones a la vez: la del donante y la de la asociacion.
 /// Ejecutar con un telefono conectado:
-///   flutter test integration_test/reglas_seguridad_test.dart
+///   flutter test integration_test/reglas_seguridad_test.dart --dart-define-from-file=pruebas.env.json
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -21,6 +23,7 @@ void main() {
   late String asociacionId;
 
   setUpAll(() async {
+    CuentasPrueba.verificar();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -31,14 +34,14 @@ void main() {
     final authDonante = FirebaseAuth.instance;
     final authAsociacion = FirebaseAuth.instanceFor(app: otra);
     donanteId = (await authDonante.signInWithEmailAndPassword(
-      email: 'prueba.donante@reparte.mx',
-      password: 'reparte123',
+      email: CuentasPrueba.correoDonante,
+      password: CuentasPrueba.contrasena,
     ))
         .user!
         .uid;
     asociacionId = (await authAsociacion.signInWithEmailAndPassword(
-      email: 'prueba.asociacion@reparte.mx',
-      password: 'reparte123',
+      email: CuentasPrueba.correoAsociacion,
+      password: CuentasPrueba.contrasena,
     ))
         .user!
         .uid;
@@ -101,6 +104,20 @@ void main() {
         'asociacionId': quien,
         'reservadaEn': DateTime.now().toIso8601String(),
       };
+
+  testWidgets('sin sesion no se puede leer ni escribir nada', (_) async {
+    // Una tercera conexion a Firebase que nunca inicia sesion.
+    final anonima = await Firebase.initializeApp(
+      name: 'sin_sesion',
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    final db = FirebaseFirestore.instanceFor(app: anonima);
+
+    await rechazada(db.collection('donaciones').get());
+    await rechazada(db.collection('usuarios').doc(donanteId).get());
+    await rechazada(db.collection('puntos_entrega').get());
+    await rechazada(db.collection('donaciones').add(donacion(donanteId)));
+  });
 
   testWidgets('nadie puede cambiarse el rol', (_) async {
     await rechazada(dbDonante
