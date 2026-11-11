@@ -99,11 +99,11 @@ EVIDENCIA H6: "Fruta y verdura (T25-13476)" quedó en el historial como entregad
 |---|---|
 | <img src="capturas/12_h6_asociacion_marca_entregada.png" width="240"> | <img src="capturas/13_h6_historial.png" width="240"> |
 
-## Observaciones para T26 (corrección de errores)
+## Observaciones de las pruebas y cierre en T26
 
-Ninguna historia falló. Se anotan estos puntos:
+Ninguna historia falló durante la prueba del flujo completo. Los puntos anotados en la revisión quedaron atendidos y cerrados:
 
-1. **Ícono de la app.** La notificación y el lanzador muestran el ícono de Flutter por defecto. Conviene poner el ícono de ReParte antes de generar el APK de release (T27).
-2. **Reglas de Firestore pendientes de publicar.** Las reglas nuevas de T20 (una sola reserva) y T23 (cierre como entregada) ya están en `firestore.rules`, pero falta `firebase deploy --only firestore:rules`. Mientras tanto, la doble reserva ya la impide la transacción de la app, como se ve en H4.
-3. **Avisos con la app cerrada.** El aviso llega con la app abierta o en segundo plano. Con la app totalmente cerrada haría falta Cloud Functions + FCM (plan Blaze), como se explica en T21.
-4. **Ubicación por GPS.** Esta prueba no usa "Mi ubicación", porque el permiso de ubicación es un diálogo del sistema que la prueba no puede tocar. Sin coordenadas, el detalle no muestra "Ver ruta en el mapa". La ruta y el GPS se probaron a mano en el mismo teléfono en T31.
+1. **Ícono de la app y de las notificaciones (resuelto en T32 y T33).** El lanzador de Android, la pantalla de carga y la barra de notificaciones muestran el logo de ReParte (`@mipmap/ic_launcher`, `ic_notificacion` y `res/raw/keep.xml` para proteger el recurso en modo release).
+2. **Reglas de Firestore publicadas y probadas (resuelto en T36).** Se reforzaron y publicaron en `reparte-a3c07` (`firebase deploy --only firestore:rules`), comprobadas con 23 escenarios de autorización en [`integration_test/reglas_seguridad_test.dart`](../../integration_test/reglas_seguridad_test.dart).
+3. **Avisos de reserva (documentado en T21).** `AvisadorReservas` y `flutter_local_notifications` entregan la notificación con la app abierta o en segundo plano sin depender del plan de pago Blaze de Firebase.
+4. **Ubicación y mapa al publicar (resuelto en T26 y T31).** Se homologó `SeleccionarUbicacionView` con la paleta visual (`TemaApp`), atribución de OpenStreetMap e inyección de `UbicacionService` por `Provider`. Además, la prueba de flujo completo selecciona el punto en el mapa (`Elegir en el mapa` → `Confirmar este punto de entrega`), guardando coordenadas válidas sin depender del diálogo de permiso del sistema y habilitando *Ver ruta en el mapa* y *Cómo llegar* en el detalle.
