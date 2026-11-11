@@ -45,7 +45,7 @@ dependencies:
   url_launcher: ^6.3.3
   http: ^1.6.0
   connectivity_plus: ^7.3.1
-  flutter_local_notifications: ^22.0.0 # la 23 exige compileSdk 37
+  flutter_local_notifications: ^23.0.0 # la 23 exige compileSdk 37
 
 dev_dependencies:
   flutter_test:
