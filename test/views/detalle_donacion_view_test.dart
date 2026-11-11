@@ -145,4 +145,46 @@ void main() {
         findsOneWidget);
     expect(find.text('Panaderia Central'), findsOneWidget);
   });
+
+  testWidgets('muestra la foto en el detalle si la donacion tiene fotoUrl (T34)',
+      (tester) async {
+    const png1x1 =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<DonacionRepository>.value(value: donaciones),
+          Provider<UsuarioRepository>.value(value: usuarios),
+        ],
+        child: MaterialApp(
+          theme: TemaApp.claro,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => DetalleDonacionView.abrir(
+                  context,
+                  donacionDePrueba(
+                    'a',
+                    descripcion: '20 panes del dia',
+                    cantidadKg: 2.5,
+                    fotoUrl: png1x1,
+                  ),
+                ),
+                child: const Text('abrir con foto'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('abrir con foto'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('imagen_donacion')), findsOneWidget);
+    expect(find.text('20 panes del dia'), findsOneWidget);
+  });
 }

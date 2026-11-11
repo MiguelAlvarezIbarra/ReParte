@@ -21,6 +21,9 @@ class Donacion {
   /// Momento en que se entrego; despues de eso ya no cambia.
   final DateTime? entregadaEn;
 
+  /// Ruta o enlace de la foto de la donacion (T34/T35); null si no tiene.
+  final String? fotoUrl;
+
   const Donacion({
     required this.id,
     required this.donanteId,
@@ -33,7 +36,11 @@ class Donacion {
     this.asociacionId,
     this.reservadaEn,
     this.entregadaEn,
+    this.fotoUrl,
   });
+
+  /// True si la donacion cuenta con una foto asignada.
+  bool get tieneFoto => fotoUrl != null && fotoUrl!.trim().isNotEmpty;
 
   /// Entregada o cancelada: el registro queda cerrado.
   bool get estaCerrada =>
@@ -72,6 +79,7 @@ class Donacion {
     String? asociacionId,
     DateTime? reservadaEn,
     DateTime? entregadaEn,
+    String? fotoUrl,
   }) {
     return Donacion(
       id: id,
@@ -85,6 +93,7 @@ class Donacion {
       asociacionId: asociacionId ?? this.asociacionId,
       reservadaEn: reservadaEn ?? this.reservadaEn,
       entregadaEn: entregadaEn ?? this.entregadaEn,
+      fotoUrl: fotoUrl ?? this.fotoUrl,
     );
   }
 
@@ -110,6 +119,10 @@ class Donacion {
         final String fecha => DateTime.parse(fecha),
         _ => null,
       },
+      fotoUrl: switch (map['fotoUrl']) {
+        final String url when url.trim().isNotEmpty => url.trim(),
+        _ => null,
+      },
     );
   }
 
@@ -124,5 +137,6 @@ class Donacion {
         'asociacionId': asociacionId,
         'reservadaEn': reservadaEn?.toIso8601String(),
         'entregadaEn': entregadaEn?.toIso8601String(),
+        'fotoUrl': fotoUrl,
       };
 }

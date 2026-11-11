@@ -56,6 +56,20 @@ void main() {
       expect(copia.creadaEn, donacion.creadaEn);
       expect(copia.estado, EstadoDonacion.disponible);
       expect(copia.asociacionId, isNull);
+      expect(copia.fotoUrl, isNull);
+      expect(copia.tieneFoto, isFalse);
+    });
+
+    test('guarda y recupera fotoUrl en JSON y copyWith la conserva (T34)', () {
+      final conFoto = donacion.copyWith(fotoUrl: '/tmp/foto_pan.jpg');
+      final copia = Donacion.fromMap('d1', conFoto.toMap());
+
+      expect(copia.fotoUrl, '/tmp/foto_pan.jpg');
+      expect(copia.tieneFoto, isTrue);
+      expect(
+        copia.copyWith(estado: EstadoDonacion.reservada).fotoUrl,
+        '/tmp/foto_pan.jpg',
+      );
     });
 
     test('acepta la cantidad como entero', () {

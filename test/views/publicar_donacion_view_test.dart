@@ -6,23 +6,26 @@ import 'package:reparte/repositories/donacion_repository.dart';
 import 'package:reparte/views/donaciones/publicar_donacion_view.dart';
 
 import '../fakes/donacion_repository_falso.dart';
+import '../fakes/selector_foto_service_falso.dart';
 import '../fakes/ubicacion_service_falso.dart';
 
 void main() {
   late DonacionRepositoryFalso repo;
   late UbicacionServiceFalso ubicacionService;
+  late SelectorFotoServiceFalso selectorFoto;
   bool? resultado;
 
   setUp(() {
     repo = DonacionRepositoryFalso();
     ubicacionService = UbicacionServiceFalso();
+    selectorFoto = SelectorFotoServiceFalso();
     resultado = null;
   });
 
   /// Abre el formulario desde un boton, como lo hace la pantalla del donante.
   Future<void> abrirFormulario(WidgetTester tester) async {
     // Pantalla alta para que todos los campos queden a la vista.
-    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.physicalSize = const Size(800, 1800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
@@ -40,6 +43,7 @@ void main() {
                       context,
                       donanteId: 'd1',
                       ubicacionService: ubicacionService,
+                      selectorFotoService: selectorFoto,
                     );
                   },
                   child: const Text('abrir'),
@@ -69,7 +73,28 @@ void main() {
     expect(campo('Dirección'), findsOneWidget);
     expect(find.byKey(const Key('boton_usar_mi_ubicacion')), findsOneWidget);
     expect(find.byKey(const Key('boton_elegir_en_mapa')), findsOneWidget);
+    expect(find.byKey(const Key('boton_tomar_foto')), findsOneWidget);
+    expect(find.byKey(const Key('boton_elegir_galeria')), findsOneWidget);
     expect(botonPublicar(), findsOneWidget);
+  });
+
+  testWidgets('permite tomar o elegir foto, previsualizarla y quitarla (T34)',
+      (tester) async {
+    await abrirFormulario(tester);
+
+    expect(find.byKey(const Key('vista_previa_foto')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('boton_tomar_foto')));
+    await tester.pumpAndSettle();
+
+    expect(selectorFoto.llamadasCamara, 1);
+    expect(find.byKey(const Key('vista_previa_foto')), findsOneWidget);
+    expect(find.byKey(const Key('boton_quitar_foto')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('boton_quitar_foto')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('vista_previa_foto')), findsNothing);
   });
 
   testWidgets('el boton Mi ubicacion pide coordenadas y las muestra (T15)',
@@ -171,20 +196,23 @@ void main() {
     await abrirFormulario(tester);
     await llenarFormulario(tester);
 
-    // Obtiene ubicacion actual
+    // Obtiene ubicacion actual y toma foto
+    await tester.tap(find.byKey(const Key('boton_tomar_foto')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('boton_usar_mi_ubicacion')));
     await tester.pumpAndSettle();
 
     await tester.tap(botonPublicar());
     await tester.pumpAndSettle();
 
-    // El formulario se cerro y la donacion quedo guardada.
+    // El formulario se cerro y la donacion quedo guardada con su foto y coordenadas.
     expect(botonPublicar(), findsNothing);
     expect(resultado, isTrue);
     final donacion = repo.creadas.single;
     expect(donacion.descripcion, 'Pan del dia');
     expect(donacion.cantidadKg, 3.5);
     expect(donacion.donanteId, 'd1');
+    expect(donacion.fotoUrl, '/tmp/foto_donacion_reducida.jpg');
     expect(donacion.caducidad.isAfter(DateTime.now()), isTrue);
     expect(repo.puntosCreados.single.nombre, 'Panaderia La Espiga');
     expect(repo.puntosCreados.single.direccion, 'Calle Hidalgo 12');

@@ -49,5 +49,9 @@
 	<string>ReParte necesita tu ubicación para fijar el punto de entrega de tu donación.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>ReParte necesita tu ubicación para fijar el punto de entrega de tu donación.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ReParte necesita la cámara para tomar una foto de los alimentos que vas a donar.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ReParte necesita acceso a tus fotos para elegir una imagen de tu donación.</string>
 </dict>
 </plist>
