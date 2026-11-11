@@ -142,6 +142,9 @@ void main() {
       await escribir('Nombre del punto de entrega', 'Panadería La Espiga');
       await escribir('Dirección', 'Av. Universidad 210, Dolores Hidalgo');
       FocusManager.instance.primaryFocus?.unfocus();
+      await tocar(find.byKey(const Key('boton_elegir_en_mapa')));
+      await tocar(find.byKey(const Key('boton_confirmar_ubicacion_mapa')));
+      await esperar(find.textContaining('Coordenadas:'));
       if (conCaptura) await captura('h2_formulario_publicar');
       await tocar(boton('Publicar donación'));
       await esperar(find.text('Donación publicada'));
