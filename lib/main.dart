@@ -12,6 +12,7 @@ import 'services/firestore_service.dart';
 import 'services/navegacion_service.dart';
 import 'services/notificaciones_service.dart';
 import 'services/rutas_service.dart';
+import 'services/selector_foto_service.dart';
 import 'services/ubicacion_service.dart';
 import 'viewmodels/login_viewmodel.dart';
 import 'views/auth/registro_view.dart';
@@ -48,6 +49,9 @@ Widget crearApp({NotificacionesService? notificaciones}) {
       Provider<UsuarioRepository>.value(value: usuarioRepository),
       Provider<DonacionRepository>.value(value: donacionRepository),
       Provider<UbicacionService>.value(value: ubicacionService),
+      Provider<SelectorFotoService>.value(
+        value: const ImagePickerSelectorFotoService(),
+      ),
       Provider<NavegacionService>.value(value: const NavegacionService()),
       Provider<RutasService>.value(value: OsrmRutasService()),
       Provider<NotificacionesService>.value(

@@ -111,6 +111,7 @@ Donacion donacionDePrueba(
   double cantidadKg = 3,
   int dias = 2,
   EstadoDonacion estado = EstadoDonacion.disponible,
+  String? fotoUrl,
 }) {
   return Donacion(
     id: id,
@@ -121,6 +122,7 @@ Donacion donacionDePrueba(
     puntoEntregaId: 'p1',
     creadaEn: DateTime(2026, 10, 1),
     estado: estado,
+    fotoUrl: fotoUrl,
   );
 }
 

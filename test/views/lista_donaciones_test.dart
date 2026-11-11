@@ -116,4 +116,25 @@ void main() {
 
     expect(find.text('No se pudieron cargar las donaciones'), findsOneWidget);
   });
+
+  testWidgets(
+      'muestra la foto en la tarjeta si tiene fotoUrl y el dibujo si no tiene (T34)',
+      (tester) async {
+    await abrirLista(tester);
+
+    // Sin foto: muestra el dibujo del tipo de alimento.
+    repo.emitir([donacionDePrueba('a', descripcion: 'Pan dulce')]);
+    await tester.pump();
+    expect(find.byKey(const Key('imagen_donacion')), findsNothing);
+    expect(find.byIcon(Icons.bakery_dining_outlined), findsOneWidget);
+
+    // Con foto (data URI de 1x1 pixel PNG): muestra la imagen en la tarjeta.
+    const png1x1 =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    repo.emitir([
+      donacionDePrueba('a', descripcion: 'Pan dulce', fotoUrl: png1x1),
+    ]);
+    await tester.pump();
+    expect(find.byKey(const Key('imagen_donacion')), findsOneWidget);
+  });
 }

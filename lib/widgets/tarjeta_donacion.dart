@@ -36,6 +36,7 @@ class TarjetaDonacion extends StatelessWidget {
               IlustracionAlimento(
                 descripcion: donacion.descripcion,
                 etiqueta: Formato.kilos(donacion.cantidadKg),
+                fotoUrl: donacion.fotoUrl,
               ),
               const SizedBox(width: 14),
               Expanded(

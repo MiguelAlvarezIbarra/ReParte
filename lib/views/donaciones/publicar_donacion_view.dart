@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/tema/tema_app.dart';
 import '../../core/utilidades/validadores.dart';
 import '../../repositories/donacion_repository.dart';
+import '../../services/selector_foto_service.dart';
 import '../../services/ubicacion_service.dart';
 import '../../viewmodels/publicar_donacion_viewmodel.dart';
+import '../../widgets/imagen_donacion.dart';
 import '../../widgets/mensaje_error.dart';
 import '../mapa/seleccionar_ubicacion_view.dart';
 
 /// Formulario con el que un donante publica una donacion.
-/// Guarda la donacion y su punto de entrega (con coordenadas y direccion).
+/// Guarda la donacion con su foto opcional (T34) y su punto de entrega
+/// (con coordenadas y direccion, T15).
 class PublicarDonacionView extends StatefulWidget {
   const PublicarDonacionView({super.key});
 
@@ -17,15 +21,33 @@ class PublicarDonacionView extends StatefulWidget {
     BuildContext context, {
     required String donanteId,
     UbicacionService? ubicacionService,
+    SelectorFotoService? selectorFotoService,
   }) async {
     final repo = context.read<DonacionRepository>();
+    var ubicacion = ubicacionService;
+    if (ubicacion == null) {
+      try {
+        ubicacion = context.read<UbicacionService>();
+      } on ProviderNotFoundException {
+        ubicacion = null;
+      }
+    }
+    var selectorFoto = selectorFotoService;
+    if (selectorFoto == null) {
+      try {
+        selectorFoto = context.read<SelectorFotoService>();
+      } on ProviderNotFoundException {
+        selectorFoto = null;
+      }
+    }
     final publicada = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider(
           create: (_) => PublicarDonacionViewModel(
             repo,
             donanteId: donanteId,
-            ubicacionService: ubicacionService,
+            ubicacionService: ubicacion,
+            selectorFotoService: selectorFoto,
           ),
           child: const PublicarDonacionView(),
         ),
@@ -122,6 +144,7 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
       puntoDireccion: _puntoDireccion.text,
       latitud: vm.latitud,
       longitud: vm.longitud,
+      fotoUrl: vm.fotoUrl,
     );
     if (ok && mounted) Navigator.of(context).pop(true);
   }
@@ -139,6 +162,71 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  'Foto de la donación (opcional)',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                if (vm.tieneFoto) ...[
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        key: const Key('vista_previa_foto'),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          height: 180,
+                          width: double.infinity,
+                          color: TemaApp.verdeClaro,
+                          child: ImagenDonacion(
+                            fotoUrl: vm.fotoUrl,
+                            respaldo: const Center(
+                              child: Icon(
+                                Icons.photo_outlined,
+                                size: 64,
+                                color: TemaApp.verde,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton.filled(
+                          key: const Key('boton_quitar_foto'),
+                          tooltip: 'Quitar foto',
+                          style: IconButton.styleFrom(
+                            backgroundColor: TemaApp.verdeOscuro,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: vm.quitarFoto,
+                          icon: const Icon(Icons.close, size: 18),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      key: const Key('boton_tomar_foto'),
+                      onPressed: vm.seleccionandoFoto ? null : vm.tomarFoto,
+                      icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                      label: const Text('Tomar foto'),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('boton_elegir_galeria'),
+                      onPressed:
+                          vm.seleccionandoFoto ? null : vm.elegirFotoDeGaleria,
+                      icon: const Icon(Icons.photo_library_outlined, size: 18),
+                      label: const Text('Elegir de galería'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
                 TextFormField(
                   controller: _descripcion,
                   minLines: 2,
@@ -235,17 +323,17 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
+                      color: TemaApp.verdeClaro,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.green.withValues(alpha: 0.3),
+                        color: TemaApp.verde.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.check_circle,
-                            color: Colors.green, size: 16),
+                            color: TemaApp.verde, size: 16),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -254,7 +342,7 @@ class _PublicarDonacionViewState extends State<PublicarDonacionView> {
                                 .textTheme
                                 .bodySmall
                                 ?.copyWith(
-                                  color: Colors.green.shade800,
+                                  color: TemaApp.verdeOscuro,
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),
