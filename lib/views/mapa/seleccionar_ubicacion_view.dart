@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
+import '../../core/tema/tema_app.dart';
 import '../../services/ubicacion_service.dart';
 
 /// Resultado devuelto tras seleccionar una ubicación en el mapa.
@@ -36,12 +38,20 @@ class SeleccionarUbicacionView extends StatefulWidget {
     double? longitudInicial,
     UbicacionService? ubicacionService,
   }) {
+    var servicio = ubicacionService;
+    if (servicio == null) {
+      try {
+        servicio = context.read<UbicacionService>();
+      } on ProviderNotFoundException {
+        servicio = null;
+      }
+    }
     return Navigator.of(context).push<ResultadoUbicacion>(
       MaterialPageRoute(
         builder: (_) => SeleccionarUbicacionView(
           latitudInicial: latitudInicial,
           longitudInicial: longitudInicial,
-          ubicacionService: ubicacionService,
+          ubicacionService: servicio,
         ),
       ),
     );
@@ -95,15 +105,14 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
 
   Future<void> _irAUbicacionActual() async {
     final pos = await _ubicacionService.obtenerUbicacionActual();
+    if (!mounted) return;
     if (pos == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'No se pudo obtener tu ubicación actual. Revisa los permisos.'),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'No se pudo obtener tu ubicación actual. Revisa los permisos.'),
+        ),
+      );
       return;
     }
     setState(() {
@@ -149,16 +158,19 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
                 markers: [
                   Marker(
                     point: pos,
-                    width: 44,
-                    height: 44,
+                    width: 48,
+                    height: 48,
                     alignment: Alignment.topCenter,
                     child: const Icon(
                       Icons.location_on,
-                      color: Colors.redAccent,
-                      size: 44,
+                      color: TemaApp.verdeOscuro,
+                      size: 48,
                     ),
                   ),
                 ],
+              ),
+              const SimpleAttributionWidget(
+                source: Text('OpenStreetMap contributors'),
               ),
             ],
           ),
@@ -177,10 +189,6 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
             right: 16,
             bottom: 24,
             child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -189,7 +197,7 @@ class _SeleccionarUbicacionViewState extends State<SeleccionarUbicacionView> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.location_on, color: Colors.redAccent),
+                        const Icon(Icons.location_on, color: TemaApp.verde),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
