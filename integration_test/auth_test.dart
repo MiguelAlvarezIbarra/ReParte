@@ -9,18 +9,21 @@ import 'package:reparte/services/firestore_service.dart';
 import 'package:reparte/viewmodels/estado_ui.dart';
 import 'package:reparte/viewmodels/login_viewmodel.dart';
 
+import 'cuentas_prueba.dart';
+
 /// Prueba el inicio de sesion contra el proyecto real de Firebase.
 /// Ejecutar con un telefono conectado:
-///   flutter test integration_test/auth_test.dart
+///   flutter test integration_test/auth_test.dart --dart-define-from-file=pruebas.env.json
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  const correo = 'prueba.donante@reparte.mx';
-  const contrasena = 'reparte123';
+  const correo = CuentasPrueba.correoDonante;
+  const contrasena = CuentasPrueba.contrasena;
 
   late LoginViewModel vm;
 
   setUpAll(() async {
+    CuentasPrueba.verificar();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );

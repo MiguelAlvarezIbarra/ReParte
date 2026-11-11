@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Secretos y configuracion local (T38): nunca se suben al repositorio
+.env
+.env.*
+pruebas.env.json
+*.keystore
+*.jks
+key.properties
+**/service-account*.json
+firebase-debug.log
+firestore-debug.log
+.firebase/

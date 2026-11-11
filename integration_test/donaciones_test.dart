@@ -9,9 +9,11 @@ import 'package:reparte/repositories/donacion_repository.dart';
 import 'package:reparte/services/auth_service.dart';
 import 'package:reparte/services/firestore_service.dart';
 
+import 'cuentas_prueba.dart';
+
 /// Criterio de T12: una donacion creada desde la app aparece en Firestore
 /// y se puede leer de vuelta. Ejecutar con un telefono conectado:
-///   flutter test integration_test/donaciones_test.dart
+///   flutter test integration_test/donaciones_test.dart --dart-define-from-file=pruebas.env.json
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -21,6 +23,7 @@ void main() {
   late String donanteId;
 
   setUpAll(() async {
+    CuentasPrueba.verificar();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -28,8 +31,10 @@ void main() {
     firestore = FirestoreService();
     repo = DonacionRepository(firestore: firestore);
     // Las reglas exigen sesion: se usa la cuenta de prueba del donante.
-    donanteId =
-        await auth.iniciarSesion('prueba.donante@reparte.mx', 'reparte123');
+    donanteId = await auth.iniciarSesion(
+      CuentasPrueba.correoDonante,
+      CuentasPrueba.contrasena,
+    );
   });
 
   tearDownAll(() => auth.cerrarSesion());
@@ -103,8 +108,8 @@ void main() {
     // La asociacion de prueba es la que reserva.
     await auth.cerrarSesion();
     final asociacionId = await auth.iniciarSesion(
-      'prueba.asociacion@reparte.mx',
-      'reparte123',
+      CuentasPrueba.correoAsociacion,
+      CuentasPrueba.contrasena,
     );
     final reservada = await repo.reservar(publicada, asociacionId);
 
