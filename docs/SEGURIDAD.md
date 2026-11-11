@@ -76,6 +76,21 @@ reservó. Sin sesión no se puede leer ningún perfil.
     avisará si alguna versión de las que usamos tiene un problema de seguridad.
 - **Dependabot** ([`.github/dependabot.yml`](../.github/dependabot.yml)) revisa
   cada semana los paquetes de Dart, Gradle y GitHub Actions.
+- **Primera revisión de Dependabot (10 nov 2026)**, 8 PRs automáticos de actualización:
+
+  | PR | Actualización | Decisión |
+  |---|---|---|
+  | #80 | `actions/checkout` 4 → 7 | Se aplica: el CI pasó con esa versión |
+  | #81 | `desugar_jdk_libs` 2.1.4 → 2.1.5 | Se aplica: parche; se compiló el APK para comprobarlo |
+  | #84 | `cupertino_icons` 1 → 2 | Se aplica: la app no usa esos íconos |
+  | #86 | `flutter_lints` 5 → 6 | Se aplica: el análisis estático pasó |
+  | #82 | Firebase 7 y `firebase_core` 5 | No se aplica: versión mayor con cambios incompatibles |
+  | #87 | `flutter_local_notifications` 23 | No se aplica: exige Android SDK 37 |
+  | #85 | Gradle 9 | No se aplica: el plugin de Android 8.11 y Flutter 3.47 usan Gradle 8 |
+  | #83 | Kotlin 2.4 | No se aplica: cambio del compilador sin tiempo para probarlo |
+
+  Ninguno era una alerta de seguridad. Los que no se aplican se cerraron con la
+  razón escrita en el PR y se le indicó a Dependabot que ignore esa versión.
 - En GitHub están activados **Dependabot alerts**, **Dependabot security
   updates**, **Secret scanning** y **Push protection** (Settings → Advanced
   Security). Al 10 nov 2026 hay **0 alertas de Dependabot abiertas**.
