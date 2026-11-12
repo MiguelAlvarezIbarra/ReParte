@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" alt="Logo de ReParte">
+</p>
+
 # ReParte
 
 > La comida que sobra no se tira: se reparte.
@@ -36,7 +40,8 @@ Lo que ya funciona:
   **asociación**), inicio de sesión, sesión que se mantiene, perfil y
   **recuperar la contraseña** por correo.
 - **Donante:** publica una donación con descripción, kilos, fecha de caducidad y
-  punto de entrega elegido en el mapa; ve *Mis donaciones* con su estado
+  punto de entrega elegido en el mapa, y puede **tomar o elegir una foto** del
+  alimento (se reduce antes de guardarla); ve *Mis donaciones* con su estado
   (activas e historial).
 - **Asociación:** ve las donaciones disponibles en tiempo real, las busca, las ve
   en un **mapa**, abre el detalle, la **reserva** y ve *Mis reservas*.
@@ -59,9 +64,36 @@ Lo que ya funciona:
 Con esto queda completo el ciclo de una donación (historias H1 a H6), probado de
 principio a fin en un teléfono real: ver [la prueba del flujo completo](docs/pruebas/flujo-completo.md).
 
-Pendiente: foto de la donación al publicar (T34) y guardarla en la nube (T35),
-corregir lo detectado en las pruebas (T26), APK de release (T27), guion de la
-demostración (T28) y README con capturas (T29).
+## Capturas
+
+Tomadas en un teléfono real durante la
+[prueba del flujo completo](docs/pruebas/flujo-completo.md), con las cuentas de prueba.
+
+### Donante
+
+| Iniciar sesión | Inicio del donante | Publicar donación | Mis donaciones |
+| :-: | :-: | :-: | :-: |
+| <img src="docs/pruebas/capturas/01_h1_inicio_sesion.png" width="200" alt="Pantalla de inicio de sesión"> | <img src="docs/pruebas/capturas/02_h1_inicio_donante.png" width="200" alt="Inicio del donante"> | <img src="docs/pruebas/capturas/03_h2_formulario_publicar.png" width="200" alt="Formulario para publicar una donación"> | <img src="docs/pruebas/capturas/04_h2_donaciones_publicadas.png" width="200" alt="Mis donaciones"> |
+
+### Asociación
+
+| Donaciones disponibles | Detalle | Reserva confirmada | Mis reservas |
+| :-: | :-: | :-: | :-: |
+| <img src="docs/pruebas/capturas/08_h3_lista_disponibles.png" width="200" alt="Lista de donaciones disponibles"> | <img src="docs/pruebas/capturas/09_h3_detalle_donacion.png" width="200" alt="Detalle de una donación"> | <img src="docs/pruebas/capturas/10_h4_reserva_confirmada.png" width="200" alt="Reserva confirmada"> | <img src="docs/pruebas/capturas/11_h4_mis_reservas.png" width="200" alt="Mis reservas"> |
+
+### Aviso y entrega
+
+| Donación reservada | Donante entrega | Asociación entrega | Historial |
+| :-: | :-: | :-: | :-: |
+| <img src="docs/pruebas/capturas/05_h5_donante_ve_reservada.png" width="200" alt="El donante ve su donación reservada"> | <img src="docs/pruebas/capturas/07_h6_donante_marca_entregada.png" width="200" alt="El donante marca la entrega"> | <img src="docs/pruebas/capturas/12_h6_asociacion_marca_entregada.png" width="200" alt="La asociación marca la entrega"> | <img src="docs/pruebas/capturas/13_h6_historial.png" width="200" alt="Historial de donaciones entregadas"> |
+
+<p align="center">
+  <img src="docs/pruebas/capturas/t33_notificacion_con_logo.png" width="420" alt="Notificación con el logo de ReParte">
+  <br><em>Aviso al donante cuando reservan su donación.</em>
+</p>
+
+Pendiente: guardar la foto de la donación en la nube (T35), cerrar el APK de
+release (T27) y el guion de la demostración (T28).
 
 ## Equipo
 
@@ -124,9 +156,15 @@ Firebase Cloud Messaging, que requiere el plan Blaze de Firebase.
 Requisitos: **Flutter 3.47 estable o superior** y un teléfono o emulador **Android 7.0 o superior**.
 
 ```bash
+git clone https://github.com/MiguelAlvarezIbarra/ReParte.git
+cd ReParte
 flutter pub get
 flutter run
 ```
+
+No hace falta configurar nada más para usar la app: ya trae la conexión a Firebase.
+Para entrar, toca **Crear cuenta** y elige el rol (donante o asociación). Si quieres
+ver el ciclo completo, crea una cuenta de cada rol.
 
 La app ya está conectada al proyecto de Firebase `reparte-a3c07`
 (`android/app/google-services.json` y `lib/firebase_options.dart`).
@@ -136,6 +174,18 @@ Las reglas de seguridad están en `firestore.rules`. Si se cambian, se publican 
 `firebase deploy --only firestore:rules --project reparte-a3c07`. El diseño del
 correo de recuperación de contraseña se configura en Firebase Console: los pasos
 están en [docs/correos](docs/correos/README.md).
+
+### Instalar en un teléfono (APK de release)
+
+```bash
+flutter build apk --release
+flutter install --release -d <id-del-telefono>   # el id sale de: flutter devices
+```
+
+El APK queda en `build/app/outputs/flutter-apk/app-release.apk` (unos 55 MB) y se
+puede copiar al teléfono e instalar sin herramientas de desarrollo. Está firmado
+con la llave de depuración, suficiente para la demostración. El teléfono debe
+permitir instalar apps de orígenes desconocidos y tener internet.
 
 ### Configuración y secretos
 
@@ -214,7 +264,7 @@ Patrones aplicados: **Repository**, **Inyección de dependencias** (Provider),
 lib/
 ├── core/           Tema (colores y tipografía), constantes y utilidades
 ├── models/         Usuario, Donacion y PuntoEntrega
-├── services/       Auth, Firestore, ubicación, rutas, notificaciones y conexión: los únicos que hablan con el exterior
+├── services/       Auth, Firestore, ubicación, rutas, notificaciones, conexión y selector de foto: los únicos que hablan con el exterior
 ├── repositories/   UsuarioRepository y DonacionRepository
 ├── viewmodels/     Lógica y estado de cada pantalla
 ├── views/
