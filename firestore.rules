@@ -8,7 +8,7 @@ rules_version = '2';
 //   usuarios/{uid}         nombre, correo, rol, telefono
 //   donaciones/{id}        donanteId, descripcion, cantidadKg, caducidad,
 //                          puntoEntregaId, creadaEn, estado, asociacionId,
-//                          reservadaEn, entregadaEn
+//                          reservadaEn, entregadaEn, fotoUrl (T35)
 //   puntos_entrega/{id}    donanteId, nombre, direccion, latitud, longitud,
 //                          horario
 service cloud.firestore {
@@ -64,6 +64,13 @@ service cloud.firestore {
       return resource.data.estado in ['entregada', 'cancelada'];
     }
 
+    // La foto (T35) es opcional: un texto de hasta unos 900 mil caracteres, para
+    // no pasar el limite de 1 MiB por documento de Firestore.
+    function fotoValida(d) {
+      return d.get('fotoUrl', null) == null
+        || (d.fotoUrl is string && d.fotoUrl.size() < 900000);
+    }
+
     // Al publicar: estado disponible, sin asociacion y con kilos validos (T36).
     function publicacionValida() {
       let d = request.resource.data;
@@ -73,7 +80,8 @@ service cloud.firestore {
         && d.get('entregadaEn', null) == null
         && d.cantidadKg is number && d.cantidadKg > 0
         && d.descripcion is string && d.descripcion.size() > 0
-        && d.puntoEntregaId is string;
+        && d.puntoEntregaId is string
+        && fotoValida(d);
     }
 
     function reservaValida() {

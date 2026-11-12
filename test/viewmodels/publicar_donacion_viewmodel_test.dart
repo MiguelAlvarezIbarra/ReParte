@@ -4,6 +4,7 @@ import 'package:reparte/viewmodels/estado_ui.dart';
 import 'package:reparte/viewmodels/publicar_donacion_viewmodel.dart';
 
 import '../fakes/donacion_repository_falso.dart';
+import '../fakes/fotos_service_falso.dart';
 import '../fakes/selector_foto_service_falso.dart';
 import '../fakes/ubicacion_service_falso.dart';
 
@@ -11,6 +12,7 @@ void main() {
   late DonacionRepositoryFalso repo;
   late UbicacionServiceFalso ubicacionService;
   late SelectorFotoServiceFalso selectorFoto;
+  late FotosServiceFalso fotos;
   late PublicarDonacionViewModel vm;
   final manana = DateTime.now().add(const Duration(days: 1));
   final ayer = DateTime.now().subtract(const Duration(days: 1));
@@ -19,11 +21,13 @@ void main() {
     repo = DonacionRepositoryFalso();
     ubicacionService = UbicacionServiceFalso();
     selectorFoto = SelectorFotoServiceFalso();
+    fotos = FotosServiceFalso();
     vm = PublicarDonacionViewModel(
       repo,
       donanteId: 'd1',
       ubicacionService: ubicacionService,
       selectorFotoService: selectorFoto,
+      fotosService: fotos,
     );
   });
 
@@ -339,6 +343,40 @@ void main() {
       final donacion = repo.creadas.single;
       expect(donacion.tieneFoto, isTrue);
       expect(donacion.fotoUrl, '/tmp/foto_donacion_reducida.jpg');
+    });
+
+    test('la foto se guarda como imagen en la nube, no como ruta (T35)',
+        () async {
+      fotos.resultado = 'data:image/jpeg;base64,AAAA';
+      await vm.tomarFoto();
+
+      final ok = await publicarValida();
+
+      expect(ok, isTrue);
+      expect(fotos.recibidas, ['/tmp/foto_donacion_reducida.jpg']);
+      expect(repo.creadas.single.fotoUrl, 'data:image/jpeg;base64,AAAA');
+    });
+
+    test('sin foto no se llama al servicio de fotos (T35)', () async {
+      await publicarValida();
+
+      expect(fotos.recibidas, isEmpty);
+      expect(repo.creadas.single.fotoUrl, isNull);
+    });
+
+    test('si la foto no sirve avisa y no guarda ni la donacion ni el punto (T35)',
+        () async {
+      fotos.falla = 'La foto pesa demasiado';
+      await vm.tomarFoto();
+
+      final ok = await publicarValida();
+
+      expect(ok, isFalse);
+      expect(vm.estado, EstadoUI.error);
+      expect(vm.mensajeError, contains('No se pudo guardar la foto'));
+      expect(vm.mensajeError, contains('pesa demasiado'));
+      expect(repo.creadas, isEmpty);
+      expect(repo.puntosCreados, isEmpty);
     });
 
     test('pasa por cargando antes de quedar publicada', () async {
