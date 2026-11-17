@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/tema/tema_app.dart';
 import '../../core/utilidades/validadores.dart';
 import '../../repositories/donacion_repository.dart';
+import '../../services/fotos_service.dart';
 import '../../services/selector_foto_service.dart';
 import '../../services/ubicacion_service.dart';
 import '../../viewmodels/publicar_donacion_viewmodel.dart';
@@ -22,6 +23,7 @@ class PublicarDonacionView extends StatefulWidget {
     required String donanteId,
     UbicacionService? ubicacionService,
     SelectorFotoService? selectorFotoService,
+    FotosService? fotosService,
   }) async {
     final repo = context.read<DonacionRepository>();
     var ubicacion = ubicacionService;
@@ -40,6 +42,14 @@ class PublicarDonacionView extends StatefulWidget {
         selectorFoto = null;
       }
     }
+    var fotos = fotosService;
+    if (fotos == null) {
+      try {
+        fotos = context.read<FotosService>();
+      } on ProviderNotFoundException {
+        fotos = null;
+      }
+    }
     final publicada = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider(
@@ -48,6 +58,7 @@ class PublicarDonacionView extends StatefulWidget {
             donanteId: donanteId,
             ubicacionService: ubicacion,
             selectorFotoService: selectorFoto,
+            fotosService: fotos,
           ),
           child: const PublicarDonacionView(),
         ),

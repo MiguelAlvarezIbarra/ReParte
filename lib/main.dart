@@ -9,6 +9,7 @@ import 'routes/rutas.dart';
 import 'services/auth_service.dart';
 import 'services/conectividad_service.dart';
 import 'services/firestore_service.dart';
+import 'services/fotos_service.dart';
 import 'services/navegacion_service.dart';
 import 'services/notificaciones_service.dart';
 import 'services/rutas_service.dart';
@@ -52,6 +53,7 @@ Widget crearApp({NotificacionesService? notificaciones}) {
       Provider<SelectorFotoService>.value(
         value: const ImagePickerSelectorFotoService(),
       ),
+      Provider<FotosService>.value(value: const FotosFirestoreService()),
       Provider<NavegacionService>.value(value: const NavegacionService()),
       Provider<RutasService>.value(value: OsrmRutasService()),
       Provider<NotificacionesService>.value(

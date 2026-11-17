@@ -3,6 +3,7 @@ import '../core/utilidades/validadores.dart';
 import '../models/donacion.dart';
 import '../models/punto_entrega.dart';
 import '../repositories/donacion_repository.dart';
+import '../services/fotos_service.dart';
 import '../services/selector_foto_service.dart';
 import '../services/ubicacion_service.dart';
 import 'estado_ui.dart';
@@ -41,15 +42,18 @@ class PublicarDonacionViewModel extends ChangeNotifier {
     required this.donanteId,
     UbicacionService? ubicacionService,
     SelectorFotoService? selectorFotoService,
+    FotosService? fotosService,
   })  : _ubicacionService =
             ubicacionService ?? const GeolocatorUbicacionService(),
         _selectorFoto =
-            selectorFotoService ?? const ImagePickerSelectorFotoService();
+            selectorFotoService ?? const ImagePickerSelectorFotoService(),
+        _fotos = fotosService ?? const FotosFirestoreService();
 
   final DonacionRepository _repo;
   final String donanteId;
   final UbicacionService _ubicacionService;
   final SelectorFotoService _selectorFoto;
+  final FotosService _fotos;
 
   EstadoUI estado = EstadoUI.inicial;
   DatosDonacion? borrador;
@@ -185,6 +189,12 @@ class PublicarDonacionViewModel extends ChangeNotifier {
     notifyListeners();
     final datos = borrador!;
     try {
+      // La foto se prepara antes de guardar nada, para no dejar un punto de
+      // entrega suelto si la foto no sirve (T35).
+      final fotoOriginal = datos.fotoUrl;
+      final fotoGuardada = fotoOriginal == null
+          ? null
+          : await _fotos.prepararParaGuardar(fotoOriginal);
       final puntoId = await _repo.crearPuntoEntrega(PuntoEntrega(
         id: '',
         donanteId: donanteId,
@@ -201,11 +211,16 @@ class PublicarDonacionViewModel extends ChangeNotifier {
         caducidad: datos.caducidad,
         puntoEntregaId: puntoId,
         creadaEn: DateTime.now(),
-        fotoUrl: datos.fotoUrl,
+        fotoUrl: fotoGuardada,
       ));
       estado = EstadoUI.listo;
       notifyListeners();
       return true;
+    } on FotoNoValida catch (e) {
+      mensajeError = 'No se pudo guardar la foto: ${e.mensaje}.';
+      estado = EstadoUI.error;
+      notifyListeners();
+      return false;
     } on ArgumentError catch (e) {
       mensajeError = e.message?.toString() ?? 'Datos de la donación inválidos';
       estado = EstadoUI.error;
