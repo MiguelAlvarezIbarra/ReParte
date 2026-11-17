@@ -6,6 +6,7 @@ import 'package:reparte/repositories/donacion_repository.dart';
 import 'package:reparte/views/donaciones/publicar_donacion_view.dart';
 
 import '../fakes/donacion_repository_falso.dart';
+import '../fakes/fotos_service_falso.dart';
 import '../fakes/selector_foto_service_falso.dart';
 import '../fakes/ubicacion_service_falso.dart';
 
@@ -44,6 +45,7 @@ void main() {
                       donanteId: 'd1',
                       ubicacionService: ubicacionService,
                       selectorFotoService: selectorFoto,
+                      fotosService: FotosServiceFalso(),
                     );
                   },
                   child: const Text('abrir'),
