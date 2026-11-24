@@ -46,20 +46,24 @@ jobs:
         run: flutter test
 
       - name: Configurar firma de produccion (Android)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           STORE_PWD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PWD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/reparte-release.jks"
-          {
-            echo "storePassword=$STORE_PWD"
-            echo "keyPassword=$KEY_PWD"
-            echo "keyAlias=$KEY_ALIAS"
-            echo "storeFile=$RUNNER_TEMP/reparte-release.jks"
-          } > android/key.properties
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/reparte-release.jks"
+            {
+              echo "storePassword=$STORE_PWD"
+              echo "keyPassword=$KEY_PWD"
+              echo "keyAlias=$KEY_ALIAS"
+              echo "storeFile=$RUNNER_TEMP/reparte-release.jks"
+            } > android/key.properties
+            echo "Keystore de produccion configurado."
+          else
+            echo "ANDROID_KEYSTORE_BASE64 no configurado; se usara firma de respaldo."
+          fi
 
       - name: Compilar APK de release
         run: flutter build apk --release
@@ -70,6 +74,9 @@ jobs:
 
       - name: Preparar artefactos y checksum SHA-256
         id: pkg
+        env:
+          FB_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          INPUT_NOTES: ${{ github.event.inputs.release_notes }}
         run: |
           VERSION="${GITHUB_REF_NAME}"
           if [[ "$GITHUB_REF" != refs/tags/* ]]; then
@@ -81,6 +88,16 @@ jobs:
           (cd dist && sha256sum "reparte-${VERSION}.apk" > SHA256SUMS.txt)
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "apk_path=dist/reparte-${VERSION}.apk" >> "$GITHUB_OUTPUT"
+          if [ -n "$FB_SA" ]; then
+            echo "has_firebase=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_firebase=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "$INPUT_NOTES" ]; then
+            echo "notes=${INPUT_NOTES}" >> "$GITHUB_OUTPUT"
+          else
+            echo "notes=ReParte ${VERSION} (Android release firmado)" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Subir artefacto de compilacion
         uses: actions/upload-artifact@v4
@@ -100,11 +117,11 @@ jobs:
           generate_release_notes: true
 
       - name: Subir a Firebase App Distribution (testers)
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+        if: steps.pkg.outputs.has_firebase == 'true'
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: 1:1040694039607:android:28084e809665118e339bb2
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           groups: testers
           file: ${{ steps.pkg.outputs.apk_path }}
-          releaseNotes: ${{ github.event.inputs.release_notes || format('ReParte {0} (Android release firmado)', steps.pkg.outputs.version) }}
+          releaseNotes: ${{ steps.pkg.outputs.notes }}
