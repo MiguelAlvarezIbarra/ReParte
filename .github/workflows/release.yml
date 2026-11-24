@@ -1,0 +1,110 @@
+# Publica el APK de Android firmado en GitHub Releases (y opcionalmente en
+# Firebase App Distribution si se configura FIREBASE_SERVICE_ACCOUNT).
+# Se activa al crear un tag v* (ej. v1.0.0) o de forma manual (workflow_dispatch).
+name: Release Android
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Notas opcionales de la version'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-y-release:
+    name: Compilar y publicar APK Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.9
+          channel: stable
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Analisis estatico
+        run: flutter analyze
+
+      - name: Pruebas unitarias y de widgets
+        run: flutter test
+
+      - name: Configurar firma de produccion (Android)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PWD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PWD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/reparte-release.jks"
+          {
+            echo "storePassword=$STORE_PWD"
+            echo "keyPassword=$KEY_PWD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=$RUNNER_TEMP/reparte-release.jks"
+          } > android/key.properties
+
+      - name: Compilar APK de release
+        run: flutter build apk --release
+
+      - name: Limpiar credenciales temporales de firma
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/reparte-release.jks"
+
+      - name: Preparar artefactos y checksum SHA-256
+        id: pkg
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+            PUB_VER=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
+            VERSION="v${PUB_VER}"
+          fi
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/reparte-${VERSION}.apk"
+          (cd dist && sha256sum "reparte-${VERSION}.apk" > SHA256SUMS.txt)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "apk_path=dist/reparte-${VERSION}.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Subir artefacto de compilacion
+        uses: actions/upload-artifact@v4
+        with:
+          name: reparte-android-${{ steps.pkg.outputs.version }}
+          path: |
+            ${{ steps.pkg.outputs.apk_path }}
+            dist/SHA256SUMS.txt
+
+      - name: Publicar en GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.pkg.outputs.apk_path }}
+            dist/SHA256SUMS.txt
+          generate_release_notes: true
+
+      - name: Subir a Firebase App Distribution (testers)
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: 1:1040694039607:android:28084e809665118e339bb2
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: testers
+          file: ${{ steps.pkg.outputs.apk_path }}
+          releaseNotes: ${{ github.event.inputs.release_notes || format('ReParte {0} (Android release firmado)', steps.pkg.outputs.version) }}

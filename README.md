@@ -92,8 +92,10 @@ Tomadas en un teléfono real durante la
   <br><em>Aviso al donante cuando reservan su donación.</em>
 </p>
 
-Pendiente: guardar la foto de la donación en la nube (T35), cerrar el APK de
-release (T27) y el guion de la demostración (T28).
+Ya están integradas todas las historias del PMV (H1 a H6) junto con foto de
+donación en Firestore (T35), guion de demostración en PDF
+([docs/guion-demostracion.pdf](docs/guion-demostracion.pdf)) y liberación de
+release en Android.
 
 ## Equipo
 
@@ -175,17 +177,25 @@ Las reglas de seguridad están en `firestore.rules`. Si se cambian, se publican 
 correo de recuperación de contraseña se configura en Firebase Console: los pasos
 están en [docs/correos](docs/correos/README.md).
 
-### Instalar en un teléfono (APK de release)
+### Instalar en un teléfono (APK de release y distribución)
 
 ```bash
 flutter build apk --release
 flutter install --release -d <id-del-telefono>   # el id sale de: flutter devices
 ```
 
-El APK queda en `build/app/outputs/flutter-apk/app-release.apk` (unos 55 MB) y se
-puede copiar al teléfono e instalar sin herramientas de desarrollo. Está firmado
-con la llave de depuración, suficiente para la demostración. El teléfono debe
-permitir instalar apps de orígenes desconocidos y tener internet.
+El APK queda en `build/app/outputs/flutter-apk/app-release.apk` y se puede
+instalar en Android 7.0 o superior sin herramientas de desarrollo. Si existe
+`android/key.properties` con el keystore de producción (`*.jks`, ignorado por
+git), la compilación firma el APK con la llave de release y aplica reducción y
+ofuscación con R8/ProGuard; en su ausencia usa la llave de depuración para no
+bloquear pruebas locales.
+
+La distribución gratuita en Android se realiza mediante **GitHub Releases** y
+**Firebase App Distribution** con entrega automatizada en
+[`.github/workflows/release.yml`](.github/workflows/release.yml) al publicar una
+etiqueta `v*` (por ejemplo `v1.0.0`). El teléfono debe permitir instalar apps de
+orígenes desconocidos y tener internet.
 
 ### Configuración y secretos
 
@@ -220,7 +230,7 @@ flutter drive --driver=test_driver/integration_test.dart \
   --dart-define-from-file=pruebas.env.json
 ```
 
-Estado actual en `main`: `flutter analyze` sin problemas, **201 pruebas
+Estado actual en `main`: `flutter analyze` sin problemas, **226 pruebas
 aprobadas** y **10 pruebas de integración** aprobadas en un Redmi Note 13 Pro
 con Android 16 (las 9 anteriores también en un Samsung A51 con Android 13). GitHub Actions corre el
 análisis y las pruebas unitarias en cada PR. Entre ellas están el
