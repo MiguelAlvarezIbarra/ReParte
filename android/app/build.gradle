@@ -8,6 +8,14 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+def storeFileProp = keystoreProperties.getProperty('storeFile')
+def hasReleaseKeystore = storeFileProp != null && file(storeFileProp).exists()
+
 android {
     namespace = "com.reparte.reparte"
     compileSdk = flutter.compileSdkVersion
@@ -35,11 +43,25 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            if (hasReleaseKeystore) {
+                keyAlias keystoreProperties.getProperty('keyAlias')
+                keyPassword keystoreProperties.getProperty('keyPassword')
+                storeFile file(storeFileProp)
+                storePassword keystoreProperties.getProperty('storePassword')
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            // Usa la llave de produccion (android/key.properties) si existe; de lo
+            // contrario cae a debug para no bloquear compilaciones locales del equipo.
+            signingConfig = hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
