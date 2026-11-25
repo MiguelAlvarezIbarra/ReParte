@@ -11,11 +11,30 @@ están en [pruebas/seguridad.md](pruebas/seguridad.md).
 | Configuración de Firebase (`apiKey`, `appId`, `projectId`, `messagingSenderId`) | **No.** Firebase lo diseña como identificadores públicos que viajan dentro de la app | `android/app/google-services.json`, `lib/firebase_options.dart` | El acceso a los datos lo controlan las **reglas de Firestore** y **Firebase Authentication**, no la clave. Ver la sección 3 |
 | Contraseña de las cuentas de prueba | **Sí** | Solo en `pruebas.env.json`, en la computadora de cada integrante | Archivo ignorado por git. En el repositorio solo está [`pruebas.env.example.json`](../pruebas.env.example.json) con valores ficticios. La contraseña se comparte por un canal privado del equipo |
 | Contraseñas de los usuarios | **Sí** | En ningún lado de la app | Se envían por HTTPS a Firebase Authentication, que las guarda cifradas. La app nunca las guarda ni las escribe en registros |
-| Llave para firmar el APK de release | **Sí** | `key.properties` y `*.jks` locales | Ignorados por git (`.gitignore` y `android/.gitignore`) |
+| Llave para firmar el APK de release | **Sí** | `key.properties` y `*.jks` locales; en GitHub, como secretos del repositorio | Ignorados por git (`.gitignore` y `android/.gitignore`). En GitHub Actions se usan los secretos de la tabla de abajo |
+| Llave de la cuenta de servicio de App Distribution | **Sí** | Solo como secreto de GitHub `FIREBASE_SERVICE_ACCOUNT` | Nunca en el repositorio. La cuenta `github-app-distribution` solo tiene el rol **Administrador de Firebase App Distribution**: no puede leer Firestore ni Authentication |
 | Sesión de Firebase CLI (para publicar reglas) | **Sí** | Perfil del usuario en su computadora | Nunca dentro del proyecto |
 
 La app **no tiene servidor propio ni claves privadas de API**: no hay valores
 que deban ir en variables de entorno para ejecutarla.
+
+### Secretos de GitHub Actions
+
+El flujo [`release.yml`](../.github/workflows/release.yml) (publicar el APK
+firmado) los lee **por nombre** con `${{ secrets.NOMBRE }}`; sus valores no
+aparecen en el repositorio ni en los registros de Actions. Los configura un
+administrador en **Settings → Secrets and variables → Actions**.
+
+| Secreto | Para qué | Si falta |
+|---|---|---|
+| `ANDROID_KEYSTORE_BASE64` | Llave de firma del APK, en base64 | El APK se firma con la llave de respaldo |
+| `ANDROID_KEYSTORE_PASSWORD` | Contraseña del almacén de llaves | Igual que arriba |
+| `ANDROID_KEY_ALIAS` | Nombre de la llave dentro del almacén | Igual que arriba |
+| `ANDROID_KEY_PASSWORD` | Contraseña de la llave | Igual que arriba |
+| `FIREBASE_SERVICE_ACCOUNT` | Subir el APK a Firebase App Distribution para el grupo `testers` | Se omite ese paso; el APK se publica igual en GitHub Releases |
+
+El flujo escribe la llave de firma en una carpeta temporal del servidor de
+Actions y la borra al terminar, aunque la compilación falle.
 
 **Revisión del historial (10 nov 2026):** no se encontraron claves privadas,
 tokens ni correos personales. La contraseña anterior de las cuentas de prueba
