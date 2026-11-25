@@ -100,7 +100,7 @@ jobs:
           fi
 
       - name: Subir artefacto de compilacion
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reparte-android-${{ steps.pkg.outputs.version }}
           path: |
